@@ -1,7 +1,9 @@
 var React = require('react');
 var PlayerScore = require('./playerScore');
+var ReactGun = require('../util/reactGun');
 
 module.exports = React.createClass({
+  mixins: [ReactGun],
   getInitialState: function(){
     // start like this
     return {
