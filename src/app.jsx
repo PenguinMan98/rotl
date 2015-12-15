@@ -1,4 +1,8 @@
 var gun = Gun('https://gunjs.herokuapp.com/gun');
+var gameUtil = require('./util/game');
+gameUtil.init(gun);
+
+console.log('loading complete');
 
 var React = require('react');
 var ReactFire = require('reactfire');
@@ -10,12 +14,8 @@ var Header = require('./modules/header');
 var Game = require('./modules/game');
 var LoginForm = require('./modules/loginForm');
 
-var gameUtil = require('./util/game');
 var diceCup = require('./util/dice');
 var fbUtil = require('./util/firebase');
-
-
-gameUtil.setGuid();
 
 var App = React.createClass({
   mixins: [ ReactFire ],
@@ -35,7 +35,7 @@ var App = React.createClass({
     var playerList = (this.state && this.state.playerList) ? this.state.playerList : {};
     //console.log(diceCup.roll(diceCup.trackDie, 5));
     //console.log(diceCup.roll(diceCup.crashDie));
-    if(fbUtil.playerLoggedIn(this.state.playerList, guid)){
+    if(gameUtil.name){
       return <div className="container-fluid">
         <Header />
         <Game playerList={playerList} />
