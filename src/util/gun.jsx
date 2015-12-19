@@ -3,14 +3,10 @@ Gun.chain.value = function(cb, opt){ return this.val(function(val, field){ delet
 Gun.chain.live = function(cb, opt){ return this.on(function(val, field){ delete val._; cb.call(this, val, field); }, opt); };
 
 module.exports = {
-  db: function(){
-    if(!this.gunDB) {
-      this.gunDB = Gun('https://gunjs.herokuapp.com/gun');
-    }
-    return this.gunDB;
-  },
-  gunDB: null,
+  server: null,
+  local: null,
   rootPath: 'rotl/',
+  localRootPath: 'local11/',
   playerPath: 'rotl/playerList/',
   chatPath: 'rotl/chat/',
   updatePlayers: function(){
@@ -35,5 +31,18 @@ module.exports = {
     }else{
       console.log('name collision');
     }
+  },
+  init( Gun ){
+    if(typeof Gun != 'function'){
+      console.log('Error no gun!');
+      return false;
+    }
+
+    // set my gun
+    this.server = Gun('https://gunjs.herokuapp.com/gun');
+    // set the local gun
+    this.local = Gun();
+
+    return true;
   }
 };

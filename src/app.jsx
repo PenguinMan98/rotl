@@ -1,57 +1,73 @@
-var gun = Gun('https://gunjs.herokuapp.com/gun');
+//var gun = Gun('https://gunjs.herokuapp.com/gun');
+//var localGun = Gun();
+var gunUtil = require('./util/gun');
 var gameUtil = require('./util/game');
-gameUtil.init(gun);
+console.log('calling init');
+if(!gunUtil.init( Gun )){
+  console.log('ERROR! Gun failed to initialize!');
+}else {
+  gameUtil.init(gunUtil);
 
-console.log('loading complete');
+  console.log('loading complete');
 
-var React = require('react');
-var ReactFire = require('reactfire');
-var Firebase = require('firebase');
-var rootUrl = "https://rotl.firebaseio.com/";
-var playerDB = new Firebase(rootUrl + 'players/');
+  var React = require('react');
+  var ReactFire = require('reactfire');
+  var Firebase = require('firebase');
+  var rootUrl = "https://rotl.firebaseio.com/";
+  //var playerDB = new Firebase(rootUrl + 'players/');
 
-var Header = require('./modules/header');
-var Game = require('./modules/game');
-var LoginForm = require('./modules/loginForm');
+  var Header = require('./modules/header');
+  var Game = require('./modules/game');
+  var LoginForm = require('./modules/loginForm');
 
-var diceCup = require('./util/dice');
-var fbUtil = require('./util/firebase');
+  var diceCup = require('./util/dice');
+  var fbUtil = require('./util/firebase');
 
-var App = React.createClass({
-  mixins: [ ReactFire ],
-  getInitialState: function(){
-    // start like this
-    return {
-      playerList: {}
+  var App = React.createClass({
+    mixins: [ReactFire],
+    getInitialState: function () {
+      // start like this
+      return {
+        playerList: {}
+      }
+    },
+    componentWillMount: function () {
+      // do this when you load
+      //this.playerDB = playerDB;
+      //this.bindAsObject(this.playerDB, 'playerList');
+
+      // set up a listener
+      gunUtil.server.get(gunUtil.playerPath) // subscribe to the server playerList
+        .live(this.updatePlayers.bind(this)); // call updatePlayers on change
+
+      gunUtil.server.get(gunUtil.playerPath) // get the playerList
+        .value(this.updatePlayers.bind(this)); // send it to the updater
+    },
+    updatePlayers(data){
+      console.log('updating players', data);
+    },
+    render: function () {
+      console.log('playerlist', this.state);
+      var playerList = (this.state && this.state.playerList) ? this.state.playerList : {};
+      //console.log(diceCup.roll(diceCup.trackDie, 5));
+      //console.log(diceCup.roll(diceCup.crashDie));
+      if (gameUtil.name) {
+        return <div className="container-fluid">
+          <Header />
+          <Game playerList={playerList}/>
+        </div>
+      } else {
+        return <div className="container-fluid">
+          <Header />
+          <LoginForm />
+        </div>
+      }
     }
-  },
-  componentWillMount: function(){
-    // do this when you load
-    this.playerDB = playerDB;
-    this.bindAsObject(this.playerDB, 'playerList');
-  },
-  render: function() {
-    console.log('playerlist', this.state);
-    var playerList = (this.state && this.state.playerList) ? this.state.playerList : {};
-    //console.log(diceCup.roll(diceCup.trackDie, 5));
-    //console.log(diceCup.roll(diceCup.crashDie));
-    if(gameUtil.name){
-      return <div className="container-fluid">
-        <Header />
-        <Game playerList={playerList} />
-      </div>
-    }else{
-      return <div className="container-fluid">
-        <Header />
-        <LoginForm />
-      </div>
-    }
-  }
-});
+  });
 
-var element = React.createElement(App, {});
-React.render(element, document.body);
-
+  var element = React.createElement(App, {});
+  React.render(element, document.body);
+}
 
 /*localStorage.clear();
 

@@ -5,7 +5,7 @@ module.exports = {
   name: '',
   lastActivity: 0,
   lastUpdate: 0,
-  gun: null,
+  gunUtil: null,
   self: this,
   makeGuid: function() {
     function s4() {
@@ -17,8 +17,8 @@ module.exports = {
       //s4() + '-' + s4() + s4() + s4();
     return s4() + s4() + s4();
   },
-  gameUpdate: function( data, field ){
-    console.log('game data changed!', data, field, this.guid );
+  localGameUpdate: function( data ){
+    console.log('game data changed!', data );
 
     var player = {};
     if(!data.guid){
@@ -27,7 +27,6 @@ module.exports = {
     }else{
       this.guid = data.guid;
     }
-    console.log('my guid: ', this.guid);
     if(!data.name){
       this.name = 'Player-'+this.guid;
       player.name = this.name;
@@ -36,20 +35,56 @@ module.exports = {
     }
     this.lastActivity = data.lastActivity;
     this.lastUpdate = Date.now();
-    this.gun.put(player).key(gunUtil.rootPath);
-  },
-  init: function( gun ){
-    console.log('init', gun, gunUtil);
-    if(!gun){
-      console.log('Error no gun!');
+
+    if( Object.keys(player).length > 0){
+      player.lastActivity = Date.now();
+      console.log('update pushing player', player, 'to', this.gunUtil.localRootPath);
+      this.gunUtil.local.put(player).key(this.gunUtil.localRootPath);
     }else{
-      this.gun = gun;
-      gun.get(gunUtil.rootPath).live(this.gameUpdate.bind(this));
-      var obj = {
-        lastActivity: Date.now()
-      };
-      console.log('setting last activity', obj);
-      gun.put(obj).key(gunUtil.rootPath);
+      this.serverPlayerUpdate(); // I'm ready to send my data to the server
     }
+  },
+  serverPlayerUpdate: function(){ // push player data to the server
+    var gunUtil = this.gunUtil;
+    var self = this;
+    gunUtil.server.get(this.gunUtil.playerPath)
+      .not(function(){ // if there are no players in the server,
+        var newPlayer = {}; // create a server player object
+        newPlayer[self.guid] = {
+          lastActivity: self.lastActivity,
+          name: self.name,
+          guid: self.guid
+        };
+        console.log('serverPlayerUpdate not pushing', newPlayer, 'to', gunUtil.playerPath);
+        gunUtil.server.put(newPlayer).key(gunUtil.playerPath);// push it
+      })
+      .value(function(data){
+        data[self.guid] = {
+          lastActivity: self.lastActivity,
+          name: self.name,
+          guid: self.guid
+        };
+        console.log('serverPlayerUpdate val pushing', data, 'to', gunUtil.playerPath);
+        gunUtil.server.put(data).key(gunUtil.playerPath);// push it
+      });
+  },
+  init: function( gunUtil ){
+    var self = this;
+    console.log('game init called', gunUtil);
+    this.gunUtil = gunUtil;
+    // set up a listener for local data.
+    gunUtil.local.get(gunUtil.localRootPath) // should be local/
+      .live(this.localGameUpdate.bind(this)); // send updates to localGameUpdate
+
+    // initialize the local data
+    gunUtil.local.get(gunUtil.localRootPath) // get the local root
+      .not(function(key){ // do this if you don't find one
+        console.log('init failed to find local root data');// send the value to localGameUpdate
+        self.localGameUpdate({});
+      })
+      .value(function(data){
+        console.log('init getting local root data', data);// send the value to localGameUpdate
+        self.localGameUpdate(data);
+      });
   }
 };
