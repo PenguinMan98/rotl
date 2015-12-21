@@ -1,12 +1,15 @@
-var gunUtil = require('./gun');
+/*
+* The purpose of this class is to house all the common routines and functions the game needs to interface with the page or storage
+* */
+
+var db = require('./db');
 
 module.exports = {
   guid: '',
   name: '',
   lastActivity: 0,
   lastUpdate: 0,
-  gunUtil: null,
-  self: this,
+  db: null,
   makeGuid: function() {
     function s4() {
       return Math.floor((1 + Math.random()) * 0x10000)
@@ -68,23 +71,15 @@ module.exports = {
         gunUtil.server.put(data).key(gunUtil.playerPath);// push it
       });
   },
-  init: function( gunUtil ){
+  init: function( db ){
     var self = this;
-    console.log('game init called', gunUtil);
-    this.gunUtil = gunUtil;
+    console.log('game init called', db);
+    this.db = db;
+
     // set up a listener for local data.
-    gunUtil.local.get(gunUtil.localRootPath) // should be local/
-      .live(this.localGameUpdate.bind(this)); // send updates to localGameUpdate
+    db.listen( 'player', self.localGameUpdate.bind(self), true);
 
     // initialize the local data
-    gunUtil.local.get(gunUtil.localRootPath) // get the local root
-      .not(function(key){ // do this if you don't find one
-        console.log('init failed to find local root data');// send the value to localGameUpdate
-        self.localGameUpdate({});
-      })
-      .value(function(data){
-        console.log('init getting local root data', data);// send the value to localGameUpdate
-        self.localGameUpdate(data);
-      });
+    db.store( 'player', { lastActivity: Date.now() }, true);
   }
 };
