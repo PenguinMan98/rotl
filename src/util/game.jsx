@@ -21,65 +21,58 @@ module.exports = {
     return s4() + s4() + s4();
   },
   localGameUpdate: function( data ){
-    console.log('game data changed!', data );
+    console.log('updating local data!', JSON.stringify(data) );
 
     var player = {};
+    var update = false;
+
     if(!data.guid){
       this.guid = this.makeGuid();
       player.guid = this.guid;
+      update = true;
     }else{
       this.guid = data.guid;
     }
     if(!data.name){
       this.name = 'Player-'+this.guid;
       player.name = this.name;
+      update = true;
     }else{
       this.name = data.name;
     }
     this.lastActivity = data.lastActivity;
     this.lastUpdate = Date.now();
 
-    if( Object.keys(player).length > 0){
+    if( update ){
       player.lastActivity = Date.now();
-      console.log('update pushing player', player, 'to', this.gunUtil.localRootPath);
-      this.gunUtil.local.put(player).key(this.gunUtil.localRootPath);
+      console.log('update pushing player', player );
+     db.store('player', player, true);
     }else{
-      this.serverPlayerUpdate(); // I'm ready to send my data to the server
+      this.serverPlayerInit(); // I'm ready to send my data to the server
     }
   },
-  serverPlayerUpdate: function(){ // push player data to the server
-    var gunUtil = this.gunUtil;
-    var self = this;
-    gunUtil.server.get(this.gunUtil.playerPath)
-      .not(function(){ // if there are no players in the server,
-        var newPlayer = {}; // create a server player object
-        newPlayer[self.guid] = {
-          lastActivity: self.lastActivity,
-          name: self.name,
-          guid: self.guid
-        };
-        console.log('serverPlayerUpdate not pushing', newPlayer, 'to', gunUtil.playerPath);
-        gunUtil.server.put(newPlayer).key(gunUtil.playerPath);// push it
-      })
-      .value(function(data){
-        data[self.guid] = {
-          lastActivity: self.lastActivity,
-          name: self.name,
-          guid: self.guid
-        };
-        console.log('serverPlayerUpdate val pushing', data, 'to', gunUtil.playerPath);
-        gunUtil.server.put(data).key(gunUtil.playerPath);// push it
-      });
+  serverPlayerInit: function(){ // push player data to the server
+    console.log('Updating my player on the server');
+    db.fetch('player',function(player){
+      console.log('player fetched', player);
+    });
+    /*db.store('player', {
+      name: this.name,
+      guid: this.guid,
+      lastActivity: this.lastActivity,
+      lastUpdate: this.lastUpdate
+    });*/
   },
   init: function( db ){
     var self = this;
-    console.log('game init called', db);
     this.db = db;
 
     // set up a listener for local data.
     db.listen( 'player', self.localGameUpdate.bind(self), true);
 
     // initialize the local data
-    db.store( 'player', { lastActivity: Date.now() }, true);
+    //db.store( 'player', { lastActivity: Date.now() }, true);
+
+    db.fetch( 'player', self.localGameUpdate.bind(self), true);
   }
 };
