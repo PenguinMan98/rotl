@@ -1,9 +1,8 @@
 var React = require('react');
 var PlayerScore = require('./playerScore');
-var ReactGun = require('../util/reactGun');
 
 module.exports = React.createClass({
-  mixins: [ReactGun],
+  mixins: [],
   getInitialState: function(){
     // start like this
     return {
@@ -25,17 +24,19 @@ module.exports = React.createClass({
     </div>
   },
   content: function(){
-    this.props.playerStore;
     if(this.props.playerList && Object.keys(this.props.playerList).length === 0){
       return <h4>Loading Game... Please wait.</h4>;
     }else{
       var children = [];
-      var player = null;
+      var player;
       for(var key in this.props.playerList){
         player = this.props.playerList[key];
-        children.push(
-          <PlayerScore id={player.id} name={player.name} score={player.score} />
-        );
+        console.log('psl player type', typeof player, player);
+        if( player && typeof player === 'object' && player.name){
+          children.push(
+            <PlayerScore id={player.id} name={player.name} score={player.score} />
+          );
+        }
       }
       return children;
     }

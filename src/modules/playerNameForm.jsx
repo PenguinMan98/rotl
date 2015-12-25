@@ -1,19 +1,18 @@
 var React = require('react');
 var game = require('../util/game');
-var gun = require('../util/gun');
 
 module.exports = React.createClass({
   getInitialState: function(){
     return{
-      playerName: "player-" + game.guid
+      playerName: ""
     }
   },
   choosePlayerName: function(){
     console.log('name chosen: ', this.state.playerName);
     if(this.state.playerName){
-      gun.setPlayerName(this.state.playerName);
+      this.props.player.setName(this.state.playerName);
     }else{
-      console.log('bad player name')
+      console.log('bad player name');
     }
   },
   changePlayerName: function( e ){
@@ -23,6 +22,9 @@ module.exports = React.createClass({
   },
   componentWillMount: function(){
     // do this when you load
+    if(this.props.player){
+      this.state.playerName = this.props.player.name;
+    }
   },
   render: function(){
     return <div className="col-md-offset-2 col-md-8">
