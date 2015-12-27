@@ -54,7 +54,7 @@ var App = React.createClass({
         <Header />
         <Game playerList={playerList} myPlayer={myPlayer} />
         <hr />
-        <Chat chatLog={this.state.chatLog} myPlayer={myPlayer} />
+        <Chat chatLog={chatLog} myPlayer={myPlayer} playerList={playerList} />
         <ChatForm myPlayer={myPlayer} chatStore={this.chatDB} />
       </div>
     } else {
