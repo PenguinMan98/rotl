@@ -16,9 +16,6 @@ module.exports = React.createClass({
     // do this when something changes
   },
   render: function(){
-    console.log('this.props in playerScoreList', this.props);
-    console.log('this.state in playerScoreList', this.state);
-
     return <div className="row">
       {this.content()}
     </div>
@@ -31,7 +28,6 @@ module.exports = React.createClass({
       var player;
       for(var key in this.props.playerList){
         player = this.props.playerList[key];
-        console.log('psl player type', typeof player, player);
         if( player && typeof player === 'object' && player.name){
           children.push(
             <PlayerScore id={player.id} name={player.name} score={player.score} />

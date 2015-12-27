@@ -8,7 +8,6 @@ module.exports = React.createClass({
     }
   },
   choosePlayerName: function(){
-    console.log('name chosen: ', this.state.playerName);
     if(this.state.playerName){
       this.props.player.setName(this.state.playerName);
     }else{
