@@ -32,7 +32,7 @@ var App = React.createClass({
     // start like this
     return {
       playerList: {},
-      chatLog: {}
+      chatLog: []
     }
   },
   componentWillMount: function () {
@@ -40,11 +40,10 @@ var App = React.createClass({
     this.playerDB = playerDB;
     this.bindAsObject(this.playerDB, 'playerList');
 
+    // holds a copy of the chatlog from the state
+    var chatLog = (this.state && this.state.chatLog) ? this.state.chatLog : [];
+
     this.chatDB = chatDB;
-    //this.bindAsObject(this.chatDB, 'chatLog');
-
-    var chatLog = (this.chatLog) ? this.chatLog : [];
-
     // query the database for records ordered by timestamp (when)
     var query = chatDB.orderByChild("when").limitToLast(gameUtil.messagesInChat);
     query.on("child_added", function(messageSnapshot) {
