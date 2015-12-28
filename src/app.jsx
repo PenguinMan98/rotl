@@ -65,6 +65,12 @@ var App = React.createClass({
     var playerList = (this.state && this.state.playerList) ? this.state.playerList : {};
     var chatLog = (this.state && this.state.chatLog) ? this.state.chatLog : {};
 
+    if(playerList['.key']){ // this is a nuisance. I wonder if this is my fault.
+      delete playerList['.key'];
+    }
+
+    console.log('app players', playerList);
+
     //console.log(diceCup.roll(diceCup.trackDie, 5));
     //console.log(diceCup.roll(diceCup.crashDie));
     if (myPlayer.name.indexOf('Player-') !== 0) {

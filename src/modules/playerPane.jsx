@@ -2,7 +2,6 @@ var React = require('react');
 
 module.exports = React.createClass({
   render: function(){
-    console.log('playerPane players', this.props.playerList);
     return <div className="col-md-3 player-pane">
       {this.content(this.props.playerList)}
     </div>

@@ -8,6 +8,7 @@ module.exports = {
   score: 0, // my total score
   turnScore: 0, // my score for this turn
   myTurn: false, // true if it's my turn
+  joinedGame: false, // true if I chose to join the game
 
   // non-synced fields
   lastUpdate: Date.now(), // last time data was pulled from the server
@@ -55,7 +56,8 @@ module.exports = {
       lastUpdate: this.lastUpdate,
       score: this.score,
       turnScore: this.turnScore,
-      myTurn: this.myTurn
+      myTurn: this.myTurn,
+      joinedGame: this.joinedGame
     };
   },
   sync: function( snapshot ){
@@ -84,9 +86,11 @@ module.exports = {
     }
   },
   setName( name ){
-    console.log('Setting my name to ', name);
     this.name = name;
-    console.log('sending', this.props());
+    this.playerDB.update(this.props());
+  },
+  joinGame( state ){
+    this.joinedGame = (state) ? true : false;
     this.playerDB.update(this.props());
   }
 };
