@@ -89,6 +89,10 @@ module.exports = {
     this.name = name;
     this.playerDB.update(this.props());
   },
+  updateScore( score ){
+    this.score += score;
+    this.playerDB.update(this.props());
+  },
   joinGame( state ){
     this.joinedGame = (state) ? true : false;
     this.playerDB.update(this.props());

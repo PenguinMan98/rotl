@@ -69,14 +69,14 @@ var App = React.createClass({
       delete playerList['.key'];
     }
 
-    console.log('app players', playerList);
+    //console.log('app players', playerList);
 
     //console.log(diceCup.roll(diceCup.trackDie, 5));
     //console.log(diceCup.roll(diceCup.crashDie));
     if (myPlayer.name.indexOf('Player-') !== 0) {
       return <div className="container-fluid">
         <Header />
-        <Game playerList={playerList} myPlayer={myPlayer} />
+        <Game playerList={playerList} myPlayer={myPlayer} gameUtil={gameUtil} />
         <hr />
         <Chat chatLog={chatLog} myPlayer={myPlayer} playerList={playerList} />
         <ChatForm myPlayer={myPlayer} chatStore={this.chatDB} />

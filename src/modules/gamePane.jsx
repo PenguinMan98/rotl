@@ -4,10 +4,13 @@ var Die = require('./die');
 module.exports = React.createClass({
   getInitialState: function(){
     return{
+      score: 0
     }
   },
   componentWillMount: function(){
     // do this when you load
+    this.props.gameUtil.newTurn(this.props.myPlayer);
+    this.props.gameUtil.newThrow();
   },
   render: function(){
     return <div className="row">
@@ -19,15 +22,7 @@ module.exports = React.createClass({
           onClick={this.handleRoll}
         />
       </div>
-      <Die id="power" type="power" locked="false" />
-      <Die id="track1" type="track" locked="false" />
-      <Die id="track2" type="track" locked="false" />
-      <Die id="track3" type="track" locked="false" />
-      <Die id="track4" type="track" locked="false" />
-      <Die id="track5" type="track" locked="false" />
-      <Die id="flag" type="flag" locked="false" />
-      <Die id="pit" type="pit" locked="true" />
-      <Die id="crash" type="crash" locked="true" />
+      {this.dice()}
       <div id="turn-stats" className="col-md-2">
         Current Turn Score: ___
       </div>
@@ -35,5 +30,16 @@ module.exports = React.createClass({
   },
   handleRoll: function(){
     console.log('roll the dice!');
+  },
+  dice(){
+    var children = [];
+    var dieName;
+    for(var id in this.props.gameUtil.allDieArray){
+      dieName = this.props.gameUtil.allDieArray[id];
+      children.push(
+        <Die id={dieName} gameUtil={this.props.gameUtil} />
+      )
+    }
+    return children;
   }
 });

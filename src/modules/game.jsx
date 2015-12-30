@@ -4,11 +4,11 @@ var GamePane = require('./gamePane');
 
 module.exports = React.createClass({
   render: function(){
-    console.log( 'game players', this.props.playerList );
+    //console.log( 'game players', this.props.playerList );
     if( this.props.myPlayer.joinedGame === true || this.props.myPlayer.joinedGame === "true" ){ // If the player has joined the game
       return <div className="game-outer">
         <PlayerScoreList playerList={this.props.playerList} />
-        <GamePane />
+        <GamePane gameUtil={this.props.gameUtil} />
       </div>
     }else{ // If the player has not joined the game
       return <div className="game-outer">

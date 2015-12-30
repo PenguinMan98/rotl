@@ -1,5 +1,3 @@
-var React = require('react');
-
 module.exports = {
   flagDie: {
     'green': 9,
@@ -47,14 +45,16 @@ module.exports = {
     '-30': 1
   },
   roll: function(die, qty){
-    console.log('params', die, qty);
-    if(typeof die != 'object'){
+    if(typeof die != 'object' && typeof die != 'string'){
       return false;
+    }
+    if(typeof die == 'string' && this[die + "Die"]){
+      die = this[die + "Die"];
     }
     if(typeof qty === 'undefined'){
       qty = 1;
     }
-    console.log('params', die, qty);
+
     var dieArr = [];
     var resultArr = [];
     for(; qty > 0; qty--){
@@ -65,6 +65,12 @@ module.exports = {
       }
       resultArr.push(dieArr[parseInt(dieArr.length * Math.random())]);
     }
-    return resultArr;
+    if(qty > 1)
+      return resultArr;
+    return resultArr[0];
+  },
+  validate( type, roll ){
+    var dieName = type + 'Die';
+    return typeof this[dieName][roll] !== "undefined";
   }
 };
