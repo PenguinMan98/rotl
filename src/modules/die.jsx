@@ -13,27 +13,32 @@ module.exports = React.createClass({
   },
   render: function(){
     var die = this.props.gameUtil.getDie(this.props.id);
-    if(!this.state){
-      return <div className="col-md-1" id={this.props.id}>
-        Die {this.props.id}<br />
-        <div>Ready</div>
-        <input type="button" value={die.locked ? "Locked": "Play"} />
-      </div>
-    }else{
-      return <div className="col-md-1" id={this.props.id}>
-        Die {this.props.id}<br />
-        <div>{die.value}</div>
-        <input
-          type="button"
-          value={this.state.locked ? "Locked": "Play" }
-          onClick={this.handleLockClick}
-        />
-      </div>
-    }
+    return <div className="col-md-1" id={this.props.id}>
+      Die {this.props.id}<br />
+      {this.content( die )}
+    </div>
   },
   handleLockClick: function(){
+    var locked = !this.state.locked;
     this.setState({
-      locked: !this.state.locked
+      locked: locked
     });
+    this.props.gameUtil.toggleLock(this.props.id);
+  },
+  content: function( die ){
+    if(!this.state){
+      return [<div>Ready</div>,
+        <input type="button" value={die.locked ? "Locked": "Play"} />];
+    }else{
+      if( die.lockable ){
+        return [<div>{die.value}</div>,
+          <input
+            type="button"
+            value={this.state.locked ? "Locked": "Play" }
+            onClick={this.handleLockClick}
+          />];
+      }
+      return <div>{die.value}</div>;
+    }
   }
 });

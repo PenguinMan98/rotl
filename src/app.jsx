@@ -1,7 +1,3 @@
-// set up my game stuff
-var gameUtil = require('./util/game');
-gameUtil.init();
-
 // start the app
 var React = require('react');
 var ReactFire = require('reactfire');
@@ -9,6 +5,10 @@ var Firebase = require('firebase');
 var rootUrl = "https://rotl.firebaseio.com/";
 var playerDB = new Firebase(rootUrl + 'players/');
 var chatDB = new Firebase(rootUrl + 'chat/');
+
+// set up my game stuff
+var gameUtil = require('./util/game');
+gameUtil.init( Firebase );
 
 // set up the browser player
 var player = require('./util/player');

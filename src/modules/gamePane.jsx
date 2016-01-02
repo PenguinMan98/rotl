@@ -9,8 +9,15 @@ module.exports = React.createClass({
   },
   componentWillMount: function(){
     // do this when you load
-    this.props.gameUtil.newTurn(this.props.myPlayer);
-    this.props.gameUtil.newThrow();
+
+    // TESTING THE GAME CORE!
+    var game = this.props.gameUtil;
+    game.newTurn(this.props.myPlayer);
+    /*game.newThrow();
+    game.toggleLock('power');
+    game.toggleLock('track2');
+    game.toggleLock('track4');
+    game.newThrow();*/
   },
   render: function(){
     return <div className="row">
@@ -20,16 +27,33 @@ module.exports = React.createClass({
           type="button"
           value="Roll"
           onClick={this.handleRoll}
+        /><br />
+        <input
+          type="button"
+          value="Stop"
+          onClick={this.handleEndTurn}
         />
       </div>
       {this.dice()}
       <div id="turn-stats" className="col-md-2">
-        Current Turn Score: ___
+        Current Turn Score: {(this.state && this.state.score)? this.state.score : 0}
       </div>
     </div>
   },
   handleRoll: function(){
     console.log('roll the dice!');
+    var gameState = this.props.gameUtil.newThrow();
+    console.log('state after this throw', gameState);
+    this.setState({
+      turnScore: gameState.turnScore
+    });
+  },
+  handleEndTurn: function(){
+    console.log('End my turn');
+    var gameState = this.props.gameUtil.endTurn();
+    this.setState({
+      turnScore: gameState.turnScore
+    });
   },
   dice(){
     var children = [];
