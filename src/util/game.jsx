@@ -1,7 +1,7 @@
 var DiceCup = require('../util/dice');
 
 module.exports = {
-  player: {},
+  myPlayer: {},
 
   // dice
   power: {
@@ -87,13 +87,13 @@ module.exports = {
   gameDB: null,
   firebaseURL: "https://rotl.firebaseio.com/",
   dbGamePath: 'game/',
+  gameStarted: false,
 
   /*
   * initialize the game
   * */
-  init: function( db ){
-    // fire off an event to get data from the server
-    this.gameDB = new Firebase( this.firebaseURL + this.dbGamePath);
+  init: function( db, myPlayer ){
+    this.gameDB = new db( this.firebaseURL + this.dbGamePath);
 
     // listen for changes to the gsme
     this.gameDB.on('value', this.setGameState.bind(this));
@@ -207,10 +207,10 @@ module.exports = {
       dieName = this.allDieArray[dieId];
       die = gsmeState[dieName];
     }
-    this.turnScore = gameState.turnScore;
-    this.throwNumber = gameState.throwNumber;
-    this.myTurn = gameState.myTurn;
-    this.turnOver = gameState.turnOver;
+    this.turnScore = parseInt(gameState.turnScore);
+    this.throwNumber = parseInt(gameState.throwNumber);
+    this.myTurn = Boolean(gameState.myTurn);
+    this.turnOver = Boolean(gameState.turnOver);
   },
 
 

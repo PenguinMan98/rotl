@@ -6,14 +6,18 @@ var rootUrl = "https://rotl.firebaseio.com/";
 var playerDB = new Firebase(rootUrl + 'players/');
 var chatDB = new Firebase(rootUrl + 'chat/');
 
-// set up my game stuff
-var gameUtil = require('./util/game');
-gameUtil.init( Firebase );
-
 // set up the browser player
 var player = require('./util/player');
 var myPlayer = Object.create(player);
 myPlayer.init( Firebase );
+
+// set up my game stuff
+var gameUtil = require('./util/game');
+gameUtil.init( Firebase, myPlayer );
+
+// set up the game-player interface
+var playerListUtil = require('./util/playerList');
+playerListUtil.init( Firebase, myPlayer );
 
 // get display modules
 var Header = require('./modules/header');
