@@ -109,6 +109,9 @@ module.exports = {
       this.lastUpdate = Date.now();
       this.localSave();
       this.remotePlayerReady = true;
+
+      // check if it's time to start the game
+      this.checkForGameStart();
     }
   },
 
@@ -178,5 +181,13 @@ module.exports = {
     this.ready = true;
     this.showGame = true;
     this.playerDB.update(this.props());
+  },
+
+
+  /*
+  * Check to see if I should start a game
+  * */
+  checkForGameStart: function(){
+
   }
 };

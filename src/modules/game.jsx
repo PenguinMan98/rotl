@@ -5,23 +5,23 @@ var GamePane = require('./gamePane');
 module.exports = React.createClass({
   render: function(){
     //console.log( 'game players', this.props.playerList );
-    console.log('showGame', this.props.myPlayer.showGame);
+    //console.log('showGame', this.props.myPlayer.showGame);
     if( Boolean(this.props.myPlayer.showGame) ){  // show: true
       if( Boolean(this.props.myPlayer.joinedGame) ){ // I've joined the game
-        console.log('show me the game!');
+        //console.log('show me the game!');
         return <div className="game-outer">
           <PlayerScoreList playerList={this.props.playerList} />
           <GamePane mode="player" gameUtil={this.props.gameUtil} />
         </div>
       }else{ // I'm a spectator
-        console.log('spectator mode');
+        //console.log('spectator mode');
         return <div className="game-outer">
           <PlayerScoreList playerList={this.props.playerList} />
           <GamePane mode="spectator" gameUtil={this.props.gameUtil} />
         </div>
       }
     }else{ // show: false
-      if( Boolean(this.props.myPlayer.joinedGame) ){ // Then I've joined the game but I"m not ready; join: true
+      if( Boolean(this.props.myPlayer.joinedGame) ){ // Then I've joined the game but I'm not ready; join: true
         return <div className="game-outer">
           <div className="game-inner row">
             <input
