@@ -95,13 +95,13 @@ module.exports = {
    * initialize the game
    * */
   init: function (db, myPlayer) {
-    this.gameDB = new db(this.firebaseURL + this.dbGamePath);
+    this.gameDB = db.game;
     this.myPlayer = myPlayer;
 
     // listen for changes to the gsme
     this.gameDB.on('value', this.setGameState.bind(this));
 
-    myPlayer.playerListDB.on('value', this.receivePlayerList.bind(this));
+    //db.player.on('value', this.receivePlayerList.bind(this));
   },
 
 
@@ -203,6 +203,11 @@ module.exports = {
     if (typeof gameState != "object") {
       console.log('cannot sync. gameState invalid.(', gameState, ')');
       return false;
+    }
+    if( !gameState ){ // if the state of the game is null
+      console.log('No game state found. Creating one');
+      this.gameDB.push(this.getGameState()); // push a default one
+      return true;
     }
     /*if (this.myTurn) {
       console.log('unable to receive sync data during my own turn');
@@ -312,11 +317,11 @@ module.exports = {
     var playerList = rawData.val();
     console.log('game is listening to player list!', playerList);
 
-    if(this.gameStarted) {
+    /*if(this.gameStarted) {
       this.myTurnCheck(playerList);
     }else{
       this.startGameCheck(playerList);
-    }
+    }*/
   },
 
 
@@ -346,6 +351,12 @@ module.exports = {
     }else{
       this.currentPlayerGuid = activePlayer.guid;
     }
+
+    // all functions should send their changes to the db
+    this.gameDB.update(this.getGameState);
+
+    // this one also returns whether it's my turn or not
+    return this.myTurn;
   },
 
   /*
@@ -371,7 +382,7 @@ module.exports = {
       return false;
     }
 
-    this.startGame(playerList);
+    //this.startGame(playerList);
   },
 
 

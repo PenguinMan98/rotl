@@ -3,21 +3,23 @@ var React = require('react');
 var ReactFire = require('reactfire');
 var Firebase = require('firebase');
 var rootUrl = "https://rotl.firebaseio.com/";
-var playerDB = new Firebase(rootUrl + 'players/');
-var chatDB = new Firebase(rootUrl + 'chat/');
+var DB = {
+  player: new Firebase(rootUrl + 'players/'),
+  chat: new Firebase(rootUrl + 'chat/'),
+  game: new Firebase(rootUrl + 'game/')
+};
 
 // set up the browser player
-var player = require('./util/player');
-var myPlayer = Object.create(player);
-myPlayer.init( Firebase );
+var myPlayer = require('./util/player');
+myPlayer.init( );
 
 // set up my game stuff
 var gameUtil = require('./util/game');
-gameUtil.init( Firebase, myPlayer );
+gameUtil.init( DB, myPlayer );
 
 // set up the game-player interface
 var playerListUtil = require('./util/playerList');
-playerListUtil.init( Firebase, myPlayer );
+playerListUtil.init( DB, myPlayer );
 
 // get display modules
 var Header = require('./modules/header');
@@ -41,15 +43,15 @@ var App = React.createClass({
   },
   componentWillMount: function () {
     // do this when you load
-    this.playerDB = playerDB;
-    this.bindAsObject(this.playerDB, 'playerList');
+    this.playerDB = DB.player;
+    this.bindAsObject(DB.player, 'playerList');
 
     // holds a copy of the chatlog from the state
     var chatLog = (this.state && this.state.chatLog) ? this.state.chatLog : [];
 
-    this.chatDB = chatDB;
+    //this.chatDB = chatDB;
     // query the database for records ordered by timestamp (when)
-    var query = chatDB.orderByChild("when").limitToLast(gameUtil.messagesInChat);
+    var query = DB.chat.orderByChild("when").limitToLast(gameUtil.messagesInChat);
     query.on("child_added", function(messageSnapshot) {
       // This will be called as messages get added
       chatLog.push(messageSnapshot.val());
@@ -80,10 +82,10 @@ var App = React.createClass({
     if (myPlayer.name.indexOf('Player-') !== 0) {
       return <div className="container-fluid">
         <Header />
-        <Game playerList={playerList} myPlayer={myPlayer} gameUtil={gameUtil} />
+        <Game playerList={playerList} myPlayer={myPlayer} gameUtil={gameUtil} DB={DB} />
         <hr />
         <Chat chatLog={chatLog} myPlayer={myPlayer} playerList={playerList} />
-        <ChatForm myPlayer={myPlayer} chatStore={this.chatDB} />
+        <ChatForm myPlayer={myPlayer} chatStore={DB.chat} />
       </div>
     } else {
       return <div className="container-fluid">

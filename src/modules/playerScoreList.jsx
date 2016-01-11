@@ -1,8 +1,19 @@
 var React = require('react');
+var Firebase = require('firebase');
+var ReactFire = require('reactfire');
+
 var PlayerScore = require('./playerScore');
 
+/*
+* Player Score List
+*
+* Props Received:
+* playerList
+* DB
+* */
+
 module.exports = React.createClass({
-  mixins: [],
+  mixins: [ReactFire],
   getInitialState: function(){
     // start like this
     return {
@@ -11,9 +22,15 @@ module.exports = React.createClass({
   },
   componentWillMount: function(){
     // do this when you load
-  },
-  componentWillReceiveProps: function(nextProps){
-    // do this when something changes
+    this.bindAsObject(this.props.DB.player, 'playerList');
+    var self = this;
+
+    this.props.DB.player.on("value", function(snapshot) {
+      self.setState({
+        playerList: snapshot.val()
+      });
+      console.log('PSL got PlayerList update', snapshot.val());
+    });
   },
   render: function(){
     return <div className="row">
@@ -21,8 +38,8 @@ module.exports = React.createClass({
     </div>
   },
   content: function(){
-    //console.log('psl playerList', this.props.playerList);
-    if(this.props.playerList && Object.keys(this.props.playerList).length === 0){
+    console.log('psl rendering playerList', this.state.playerList);
+    if(!this.state || ( this.state.playerList && Object.keys(this.state.playerList).length === 0 ) ){
       return <h4>Loading Game... Please wait.</h4>;
     }else{
       var children = [];

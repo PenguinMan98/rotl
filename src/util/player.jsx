@@ -40,7 +40,7 @@ module.exports = {
   * sync with local data
   * query and sync with server
   * */
-  init: function( db ){
+  init: function( ){
     this.guid = localStorage.getItem('player_guid');
     if(this.guid && this.guid != ''){ // I'm already registered
       this.localFetch();

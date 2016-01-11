@@ -4,7 +4,7 @@ var game = require('../util/game');
 module.exports = React.createClass({
   getInitialState: function(){
     return{
-      playerName: ""
+      myPlayer: {}
     }
   },
   choosePlayerName: function(){

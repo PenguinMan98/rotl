@@ -22,7 +22,7 @@ module.exports = {
    * */
   init: function( db ){
     // set up my database connections
-    this.playerListDB = new db( firebaseURL + "players/");
+    this.playerListDB = db.player;
     //this.playerDB = new db( firebaseURL + "players/" + this.guid + "/");
 
     // listen for changes to the player list
