@@ -4,25 +4,18 @@ var Die = require('./die');
 module.exports = React.createClass({
   getInitialState: function(){
     return{
-      score: 0
+      gameState: {}
     }
   },
   componentWillMount: function(){
     // do this when you load
-
-    // TESTING THE GAME CORE!
     var game = this.props.gameUtil;
-    game.newTurn(this.props.myPlayer);
-    /*game.newThrow();
-    game.toggleLock('power');
-    game.toggleLock('track2');
-    game.toggleLock('track4');
-    game.newThrow();*/
+    game.gameDB.on("value", this.updateGameState);
   },
   render: function(){
     return <div className="row">
       <div id="roll-btn" className="col-md-1">
-        <div id="player-turn">Player _</div>
+        <div id="player-turn">Player {this.props.gameUtil.currentPlayerGuid}</div>
         <input
           type="button"
           value="Roll"
@@ -36,34 +29,39 @@ module.exports = React.createClass({
       </div>
       {this.dice()}
       <div id="turn-stats" className="col-md-2">
-        Current Turn Score: {(this.state && this.state.score)? this.state.score : 0}
+        Current Turn Score: {(this.state && this.state.gameState)? this.state.gameState.turnScore : 0}
       </div>
     </div>
   },
   handleRoll: function(){
     console.log('roll the dice!');
-    var gameState = this.props.gameUtil.newThrow();
-    console.log('state after this throw', gameState);
-    this.setState({
-      turnScore: gameState.turnScore
-    });
+    this.props.gameUtil.newThrow();
   },
   handleEndTurn: function(){
     console.log('End my turn');
-    var gameState = this.props.gameUtil.endTurn();
-    this.setState({
-      turnScore: gameState.turnScore
-    });
+    this.props.gameUtil.endTurn();
   },
   dice(){
     var children = [];
     var dieName;
     for(var id in this.props.gameUtil.allDieArray){
       dieName = this.props.gameUtil.allDieArray[id];
+
+      var die = this.props.gameUtil.getDie(dieName);
+      if(this.state.gameState && this.state.gameState[dieName]){
+        die = this.state.gameState[dieName];
+      }
+
       children.push(
-        <Die id={dieName} gameUtil={this.props.gameUtil} />
+        <Die id={dieName} die={die} gameUtil={this.props.gameUtil} />
       )
     }
     return children;
+  },
+  updateGameState( gameState ){
+    console.log('gamePane got a game update', gameState.val());
+    this.setState({
+      gameState: gameState.val()
+    });
   }
 });

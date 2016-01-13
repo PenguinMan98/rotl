@@ -25,15 +25,18 @@ module.exports = React.createClass({
     this.props.DB.game.on('value', this.receiveGameState );
   },
   render: function(){
-    console.log( 'game players', this.props.playerList );
-    console.log( 'my player', this.props.myPlayer );
-    console.log('showGame', this.props.myPlayer.showGame);
+    //console.log( 'game players', this.props.playerList );
+    //console.log( 'my player', this.props.myPlayer );
+    //console.log('showGame', this.props.myPlayer.showGame);
+    // is it my turn?
+    var myTurn = (this.state) ? this.state.myTurn : false;
+
     if( Boolean(this.props.myPlayer.showGame) ){  // show: true
       if( Boolean(this.props.myPlayer.joinedGame) ){ // I've joined the game
         //console.log('show me the game!');
         return <div className="game-outer">
           <PlayerScoreList playerList={this.props.playerList} DB={this.props.DB} />
-          <GamePane mode="player" gameUtil={this.props.gameUtil} />
+          <GamePane mode="player" myTurn={myTurn} gameUtil={this.props.gameUtil} />
         </div>
       }else{ // I'm a spectator
         //console.log('spectator mode');
@@ -51,7 +54,7 @@ module.exports = React.createClass({
               className="col-md-offset-4 col-md-4"
               value="Ready to start!"
               onClick={this.handleReady}
-            /> (Position: {this.getMyPosition()})
+            /><span> (Joined in Position: {this.state.myPlayer.turnOrder})</span>
           </div>
         </div>
       }else{ // I haven't joined the game; join: false
@@ -91,53 +94,19 @@ module.exports = React.createClass({
     if(this.props.gameUtil.gameStarted){ // if the game has already started, this is not allowed
       return false;
     }
-    var myPosition = this.getMyPosition();
-
     var myPlayer = this.props.myPlayer;
-    myPlayer.setTurnOrder( myPosition ); // my position is last. (You snooze, you lose)
     myPlayer.setReady(true);
-
-    if(this.state && this.state.gameState && this.state.playerList){
-      console.log("Ready method has gameState", this.state.gameState);
-      var myTurn = this.props.gameUtil.myTurnCheck(this.state.playerList);
-      console.log("Is it my turn?", myTurn ? 'yes':'no');
-
-      // should I start the game?
-      var startGame = this.props.gameUtil.startGameCheck(this.state.playerList);
-      console.log("Should I start the game?", startGame ? 'yes':'no');
-    }
-    // check to see if I'm first player
-    if(myPosition == 1){
-
-      // check to see if the game should start if I am
-      //var newGameState = this.props.gameUtil.myTurnCheck();
-
-    }
 
   },
   getMyPosition: function(){
-    var playerCount = 0;
-    var player;
-    for(var guid in this.props.playerList){
-      player = this.props.playerList[guid];
-      console.log('getting position', player);
-      if( Boolean(player.ready) ){//firebase returns strings
-        playerCount += 1; // count up the current players
-      }
-    }
-    return playerCount + 1;
+    var position = this.countGamePlayers() + 1;
+    return position;
   },
   handleJoinGame: function(){
-    this.props.myPlayer.joinGame( true );
-    var playerCount = 0;
-    var player;
-    for(var guid in this.props.playerList){
-      player = this.props.playerList[guid];
-      if(player.joinedGame === "true"){//firebase returns strings
-        playerCount += 1; // count up the current players
-      }
-    }
-    this.props.myPlayer.setTurnOrder( playerCount + 1 ); // my position is last. (You snooze, you lose)
+    var myPlayer = this.props.myPlayer;
+    var myPosition = this.getMyPosition();
+
+    myPlayer.joinGame( true, myPosition );
   },
   handleSpectateGame: function(){
     this.props.myPlayer.joinGame( false );
@@ -156,12 +125,61 @@ module.exports = React.createClass({
     this.setState({
       playerList: snapshot.val()
     });
+
+    if(this.state && this.state.gameState){
+      console.log("I have a playerlist and a gamestate. Let's see if we are ready to start the game");
+      var countPlayers = this.countGamePlayers();
+
+      console.log('count players', countPlayers);
+      console.log('ready players', this.countReadyGamePlayers());
+      console.log('game state', this.state.gameState);
+      if(countPlayers >= 2 && countPlayers == this.countReadyGamePlayers() && this.state.gameState.gameStarted === false){
+        console.log("We can start the game!");
+        if(this.state.myPlayer.turnOrder == 1){
+          console.log("The game is starting and I go first!");
+          this.props.gameUtil.startGame( this.state.playerList );
+        }
+      }else{
+        console.log("We can't start the game. :(");
+      }
+    }
   },
   receiveGameState: function( snapshot ){
     console.log('game module got game state', snapshot.val());
     this.setState({
       chatState: snapshot.val()
     });
+  },
+  isItMyTurn: function( ){
+
+  },
+  countGamePlayers: function( playerList ){
+    var gamePlayers = 0;
+    if(!this.state || !this.state.playerList){
+      return gamePlayers;
+    }
+    var player;
+    for(var guid in this.state.playerList) {
+      player = this.state.playerList[guid];
+      if(player.joinedGame){
+        gamePlayers += 1;
+      }
+    }
+    return gamePlayers;
+  },
+  countReadyGamePlayers: function( playerList ){
+    var gamePlayers = 0;
+    if(!this.state || !this.state.playerList){
+      return gamePlayers;
+    }
+    var player;
+    for(var guid in this.state.playerList) {
+      player = this.state.playerList[guid];
+      if(player.joinedGame && player.ready){
+        gamePlayers += 1;
+      }
+    }
+    return gamePlayers;
   }
 });
 

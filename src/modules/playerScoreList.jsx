@@ -38,7 +38,7 @@ module.exports = React.createClass({
     </div>
   },
   content: function(){
-    console.log('psl rendering playerList', this.state.playerList);
+    //console.log('psl rendering playerList', this.state.playerList);
     if(!this.state || ( this.state.playerList && Object.keys(this.state.playerList).length === 0 ) ){
       return <h4>Loading Game... Please wait.</h4>;
     }else{

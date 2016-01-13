@@ -69,10 +69,10 @@ module.exports = {
   },
 
   // score
-  turnScore: 0,
+  turnScore: parseInt(0),
 
   // throw (needed?)
-  throwNumber: 0,
+  throwNumber: parseInt(0),
 
   // turn
   currentPlayerGuid: null, // stores the guid of the player whose turn it is. CAN be synced
@@ -98,6 +98,10 @@ module.exports = {
     this.gameDB = db.game;
     this.myPlayer = myPlayer;
 
+    // not sure why I need to set these so they aren't NaN
+    this.turnScore = 0;
+    this.throwNumber = 0;
+
     // listen for changes to the gsme
     this.gameDB.on('value', this.setGameState.bind(this));
 
@@ -109,6 +113,7 @@ module.exports = {
    * set up the new game turn
    * */
   newTurn: function (player) {
+    console.log('starting the new turn');
     if (typeof this.player == "object" && this.player.updateScore) {
       this.player.updateScore(this.turnScore);
     }
@@ -161,7 +166,8 @@ module.exports = {
     }
 
     this.calculateTurnScore();
-    return this.getGameState();
+    this.gameDB.update(this.getGameState());
+    //return this.getGameState();
   },
 
 
@@ -169,10 +175,10 @@ module.exports = {
    * Returns the details of this game for serialization and sync
    * */
   getGameState: function () {
-    if (!this.myTurn) {
+    /*if (!this.myTurn) {
       console.log("We don't send sync data unless it's our turn.");
       return false;
-    }
+    }*/
     var gameState = {};
 
     var die, dieName;
@@ -189,7 +195,7 @@ module.exports = {
     gameState.gameStarted = this.gameStarted;
 
     // push the gameState
-    this.gameDB.update(gameState);
+    //this.gameDB.update(gameState);
 
     return gameState;
   },
@@ -199,21 +205,21 @@ module.exports = {
    * Receives the details of this game for serialization and sync
    * */
   setGameState: function (gameState) {
+    console.log('gameState received', gameState.val());
     gameState = gameState.val();
     if (typeof gameState != "object") {
       console.log('cannot sync. gameState invalid.(', gameState, ')');
       return false;
     }
-    if( !gameState ){ // if the state of the game is null
+    if( !gameState || Object.keys(gameState).length <= 1 ){ // if the state of the game is null or empty
       console.log('No game state found. Creating one');
-      this.gameDB.push(this.getGameState()); // push a default one
+      this.gameDB.update(this.getGameState()); // push a default one
       return true;
     }
     /*if (this.myTurn) {
       console.log('unable to receive sync data during my own turn');
       return false;
     }*/
-    console.log('setting game state', gameState);
 
     var die, dieName;
     for (var dieId in this.allDieArray) {
@@ -223,7 +229,7 @@ module.exports = {
     this.turnScore = parseInt(gameState.turnScore);
     this.throwNumber = parseInt(gameState.throwNumber);
     //this.myTurn = Boolean(gameState.myTurn); // can't sync this.  It's not the same for all players.
-    this.currentPlayerGuid = Boolean(gameState.currentPlayerGuid);
+    this.currentPlayerGuid = gameState.currentPlayerGuid;
     this.turnOver = Boolean(gameState.turnOver);
     this.gameStarted = Boolean(gameState.gameStarted);
   },
@@ -236,6 +242,7 @@ module.exports = {
     if (this[die]) {
       this[die].locked = !this[die].locked;
     }
+    this.gameDB.update(this.getGameState()); // notify the others I've toggled it
     return this[die].locked;
   },
   endTurn: function () {
@@ -353,7 +360,9 @@ module.exports = {
     }
 
     // all functions should send their changes to the db
-    this.gameDB.update(this.getGameState);
+    var updates = this.getGameState();
+    console.log('updates', updates);
+    this.gameDB.update(updates);
 
     // this one also returns whether it's my turn or not
     return this.myTurn;
@@ -363,7 +372,6 @@ module.exports = {
    * Check the player state to see if we should launch the game
    * */
   startGameCheck: function (playerList) {
-    console.log('checking to see if we should start the game', playerList);
     // Loop through the players
     var player;
     var playerCount = 0;
@@ -410,19 +418,17 @@ module.exports = {
     }
 
     if (this.myPlayer.guid == firstPlayer.guid) {
-      console.log("I'm first!");
       this.myTurn = true;
 
       // update the new state
       this.myPlayer.playerListDB.update(playerList);
 
-      console.log('start the game already!');
       this.gameStarted = true;
-      this.gameDB.update(this.getGameState());
+      var gameUpdates = this.getGameState();
+      this.gameDB.update(gameUpdates);
       this.newTurn(firstPlayer); // start the game!
     } else {
       this.myTurn = false;
-      console.log("I'm not first!");
     }
 
   }

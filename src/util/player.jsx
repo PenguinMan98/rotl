@@ -89,6 +89,7 @@ module.exports = {
   * Receives player data from the server
   * */
   sync: function( snapshot ){
+    console.log('player syncing');
     var player = snapshot.val();
     if(player) {
       // props
@@ -168,8 +169,9 @@ module.exports = {
   /*
    * indicate if I am joining the game
    * */
-  joinGame( state ){
+  joinGame( state, position ){
     this.joinedGame = (state) ? true : false;
+    this.turnOrder = position;
     this.playerDB.update(this.props());
   },
 

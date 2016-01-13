@@ -12,7 +12,8 @@ module.exports = React.createClass({
     // do this when you load
   },
   render: function(){
-    var die = this.props.gameUtil.getDie(this.props.id);
+    var die = this.props.die;
+
     return <div className="col-md-1" id={this.props.id}>
       Die {this.props.id}<br />
       {this.content( die )}
@@ -34,7 +35,7 @@ module.exports = React.createClass({
         return [<div>{die.value}</div>,
           <input
             type="button"
-            value={this.state.locked ? "Locked": "Play" }
+            value={die.locked ? "Locked": "Play" }
             onClick={this.handleLockClick}
           />];
       }
