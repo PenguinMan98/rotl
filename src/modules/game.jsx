@@ -3,50 +3,83 @@ var ReactFire = require('reactfire');
 var PlayerScoreList = require('./playerScoreList');
 var GamePane = require('./gamePane');
 
+/*
+ *
+ * PASSED PROPS
+ * gameUtil         the game utility
+ * playerListUtil   the player list utility
+ * DB               An object containing db references (player, chat, game)
+ * myGuid           My Guid!
+ *
+ * We want the game state to refresh whenever there is a change
+ * to the playerList or the gameState
+ * */
+
 module.exports = React.createClass({
   mixins: [ReactFire],
   getInitialState: function(){
     return {
       playerList: {},
-      myPlayer: {},
       loggedIn: false,
       myTurn: false,
       gameState: {}
     };
   },
   componentWillMount: function() {
-    this.bindAsObject(this.props.myPlayer.playerDB, 'myPlayer');
-    this.props.myPlayer.playerDB.on('value', this.receiveMyPlayer );
+    //this.bindAsObject(this.props.myPlayer.playerDB, 'myPlayer');
+    //this.props.myPlayer.playerDB.on('value', this.receiveMyPlayer );
 
-    this.bindAsObject(this.props.myPlayer.playerListDB, 'playerList');
-    this.props.myPlayer.playerListDB.on('value', this.receivePlayerList );
+    // subscribe to changes to the playerList
+    this.bindAsObject(this.props.DB.player, 'playerList');
+    this.props.DB.player.on('value', this.receivePlayerList );
 
+    // subscribe to changes to the gameState
     this.bindAsObject(this.props.DB.game, 'gameState');
     this.props.DB.game.on('value', this.receiveGameState );
   },
   render: function(){
-    //console.log( 'game players', this.props.playerList );
-    //console.log( 'my player', this.props.myPlayer );
-    //console.log('showGame', this.props.myPlayer.showGame);
     // is it my turn?
-    var myTurn = (this.state) ? this.state.myTurn : false;
+    var myTurn = (this.state) ? this.state.myTurn : this.props.myTurn;
+    var playerList = this.state.playerList;
+    //var gameState = this.state.gameState;
+    this.props.playerListUtil.setPlayerList(playerList);
+    //this.props.gameUtil.setGameState(gameState);
+    myPlayer = this.props.playerListUtil.getPlayerByGuid( this.props.myGuid );
 
-    if( Boolean(this.props.myPlayer.showGame) ){  // show: true
-      if( Boolean(this.props.myPlayer.joinedGame) ){ // I've joined the game
+    if( myPlayer && myPlayer.showGame ){  // show: true
+      if( myPlayer && myPlayer.joinedGame ){ // I've joined the game
         //console.log('show me the game!');
         return <div className="game-outer">
-          <PlayerScoreList playerList={this.props.playerList} DB={this.props.DB} />
-          <GamePane mode="player" myTurn={myTurn} gameUtil={this.props.gameUtil} />
+          <PlayerScoreList
+            playerList={playerList}
+            DB={this.props.DB}
+          />
+          <GamePane
+            mode="player"
+            myTurn={myTurn}
+            gameUtil={this.props.gameUtil}
+            playerListUtil={this.props.playerListUtil}
+            myGuid={this.props.myGuid}
+          />
         </div>
       }else{ // I'm a spectator
         //console.log('spectator mode');
         return <div className="game-outer">
-          <PlayerScoreList playerList={this.props.playerList} DB={this.props.DB} />
-          <GamePane mode="spectator" gameUtil={this.props.gameUtil} />
+          <PlayerScoreList
+            playerList={this.props.playerList}
+            DB={this.props.DB}
+          />
+          <GamePane
+            mode="spectator"
+            myTurn={false}
+            gameUtil={this.props.gameUtil}
+            playerListUtil={this.props.playerListUtil}
+            myGuid={this.props.myGuid}
+          />
         </div>
       }
     }else{ // show: false
-      if( Boolean(this.props.myPlayer.joinedGame) ){ // Then I've joined the game but I'm not ready; join: true
+      if( myPlayer.joinedGame ){ // Then I've joined the game but I'm not ready; join: true
         return <div className="game-outer">
           <div className="game-inner row">
             <input
@@ -54,7 +87,7 @@ module.exports = React.createClass({
               className="col-md-offset-4 col-md-4"
               value="Ready to start!"
               onClick={this.handleReady}
-            /><span> (Joined in Position: {this.state.myPlayer.turnOrder})</span>
+            /><span> (Joined in Position: {myPlayer.turnOrder})</span>
           </div>
         </div>
       }else{ // I haven't joined the game; join: false
@@ -90,29 +123,63 @@ module.exports = React.createClass({
       }
     }
   },
+
+  /*
+  * Handle player indicating they are ready to start the game
+  * */
   handleReady: function(){
-    if(this.props.gameUtil.gameStarted){ // if the game has already started, this is not allowed
+    if(this.state.gameState.gameStarted){ // if the game has already started, this is not allowed
       return false;
     }
-    var myPlayer = this.props.myPlayer;
-    myPlayer.setReady(true);
 
+    // make sure I'm working with the latest player list
+    this.props.playerListUtil.setPlayerList(this.state.playerList);
+    // set me ready
+    this.props.playerListUtil.setReady(this.props.myGuid);
   },
+
+  /*
+  * Figures out which position the joining player will be in
+  * */
   getMyPosition: function(){
-    var position = this.countGamePlayers() + 1;
+    var position = this.countGamePlayers(this.state.playerList) + 1;
     return position;
   },
-  handleJoinGame: function(){
-    var myPlayer = this.props.myPlayer;
-    var myPosition = this.getMyPosition();
 
-    myPlayer.joinGame( true, myPosition );
+  /*
+  * When the user chooses to join the game
+  * */
+  handleJoinGame: function(){
+    // make sure I'm working with the latest player list
+    this.props.playerListUtil.setPlayerList(this.state.playerList);
+
+    // get my position
+    var myPosition = this.getMyPosition();
+    // join the game and lock in my position
+    this.props.playerListUtil.joinGame( this.props.myGuid, myPosition );
+
+    var gameState;
+    // try to get the current one from state
+    if(this.state && this.state.gameState && Object.keys(this.state.gameState).length > 1){
+      gameState = this.state.gameState;
+    }else{ // otherwise, generate a default
+      gameState = this.props.gameUtil.getDefaultGameState();
+    }
+    // load the gamestate into the Util.
+    this.props.gameUtil.setGameState(gameState);
+    // If I'm position 1
+    if( myPosition == 1 ) {
+      // set me as the current player
+      gameState.currentPlayerGuid = this.props.myGuid;
+    }
+    // save the changes
+    this.props.gameUtil.dbUpdate();
   },
   handleSpectateGame: function(){
     this.props.myPlayer.joinGame( false );
   },
   receiveMyPlayer: function( snapshot ){
-    console.log('game module got my player', snapshot.val());
+    //console.log('game module got my player', snapshot.val());
 
     // I shouldn't get this event until the player has submitted their own in-game name.
     this.setState({
@@ -121,34 +188,62 @@ module.exports = React.createClass({
     });
   },
   receivePlayerList: function( snapshot ){
+    var playerList = snapshot.val();
     console.log('game module got playerList', snapshot.val());
     this.setState({
-      playerList: snapshot.val()
+      playerList: playerList
     });
 
+    // when I receive player data, this can mean a number of things
+    // If the game hasn't started, a new player joined or readied
+    // A vote to start the game
+    // if the game is started, a vote to skip, restart, etc.
+    // Or a player dropping out
+
+    var gameState = this.state.gameState;
+    if(this.state && gameState && Object.keys(gameState).length > 1){ // I have a gameState and a playerList
+      console.log('This is the heavy spot where all the important logic goes', gameState, playerList);
+    }else{
+      console.log("I don't have a game state?", gameState);
+    }
+
+    /*for(var guid in playerList){
+      if(guid == this.props.myPlayer.guid){
+        console.log("Found my player", playerList[guid]);
+        this.setState({
+          myTurn: playerList[guid].myTurn
+        });
+      }
+    }
+
     if(this.state && this.state.gameState){
-      console.log("I have a playerlist and a gamestate. Let's see if we are ready to start the game");
+      //console.log("I have a playerlist and a gamestate. Let's see if we are ready to start the game");
       var countPlayers = this.countGamePlayers();
 
-      console.log('count players', countPlayers);
-      console.log('ready players', this.countReadyGamePlayers());
-      console.log('game state', this.state.gameState);
+      //console.log('count players', countPlayers);
+      //console.log('ready players', this.countReadyGamePlayers());
+      //console.log('game state', this.state.gameState);
       if(countPlayers >= 2 && countPlayers == this.countReadyGamePlayers() && this.state.gameState.gameStarted === false){
-        console.log("We can start the game!");
+        //console.log("We can start the game!");
         if(this.state.myPlayer.turnOrder == 1){
-          console.log("The game is starting and I go first!");
+          //console.log("The game is starting and I go first!");
           this.props.gameUtil.startGame( this.state.playerList );
         }
       }else{
-        console.log("We can't start the game. :(");
+        //console.log("We can't start the game. :(");
       }
-    }
+    }*/
   },
   receiveGameState: function( snapshot ){
     console.log('game module got game state', snapshot.val());
     this.setState({
-      chatState: snapshot.val()
+      gameState: snapshot.val()
     });
+
+    // I should see gameState updates whenever
+    // the dice are rolled
+    // die lock state is changed
+    // turn is ended or begun
   },
   isItMyTurn: function( ){
 

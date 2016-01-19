@@ -15,11 +15,11 @@ myPlayer.init( );
 
 // set up my game stuff
 var gameUtil = require('./util/game');
-gameUtil.init( DB, myPlayer );
+gameUtil.init( DB.game, myPlayer.guid );
 
 // set up the game-player interface
 var playerListUtil = require('./util/playerList');
-playerListUtil.init( DB, myPlayer );
+playerListUtil.init( DB.player, myPlayer.guid );
 
 // get display modules
 var Header = require('./modules/header');
@@ -32,6 +32,12 @@ var ChatForm = require('./modules/chatForm');
 var diceCup = require('./util/dice');
 
 // rock n roll
+
+/*
+* App!
+* Holds the whole app together
+* Updates when the chat updates currently (todo: fix this)
+* */
 var App = React.createClass({
   mixins: [ReactFire],
   getInitialState: function () {
@@ -82,7 +88,12 @@ var App = React.createClass({
     if (myPlayer.name.indexOf('Player-') !== 0) {
       return <div className="container-fluid">
         <Header />
-        <Game playerList={playerList} myPlayer={myPlayer} gameUtil={gameUtil} DB={DB} />
+        <Game
+          gameUtil={gameUtil}
+          playerListUtil={playerListUtil}
+          DB={DB}
+          myGuid={myPlayer.guid}
+        />
         <hr />
         <Chat chatLog={chatLog} myPlayer={myPlayer} playerList={playerList} />
         <ChatForm myPlayer={myPlayer} chatStore={DB.chat} />

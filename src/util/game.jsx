@@ -1,7 +1,9 @@
 var DiceCup = require('../util/dice');
 
 module.exports = {
-  myPlayer: {},
+  myGuid: 0, // my guid
+  gameDB: null,
+  gameState: {},
 
   // dice
   power: {
@@ -68,66 +70,62 @@ module.exports = {
     lockable: false
   },
 
-  // score
-  turnScore: parseInt(0),
-
-  // throw (needed?)
-  throwNumber: parseInt(0),
-
-  // turn
-  currentPlayerGuid: null, // stores the guid of the player whose turn it is. CAN be synced
-  myTurn: false, // CANNOT be synced.  Use for local reference
-  turnOver: false, // CAN be synced.
-
   // shortcuts
   allDieArray: ['power', 'track1', 'track2', 'track3', 'track4', 'track5', 'flag', 'pit', 'crash'],
   commonDieArray: ['power', 'track1', 'track2', 'track3', 'track4', 'track5', 'flag'],
 
   // configuration
   messagesInChat: 10,
-  gameDB: null,
-  firebaseURL: "https://rotl.firebaseio.com/",
-  dbGamePath: 'game/',
-  gameStarted: false,
 
 
   /*
    * initialize the game
    * */
-  init: function (db, myPlayer) {
-    this.gameDB = db.game;
-    this.myPlayer = myPlayer;
-
-    // not sure why I need to set these so they aren't NaN
-    this.turnScore = 0;
-    this.throwNumber = 0;
-
-    // listen for changes to the gsme
-    this.gameDB.on('value', this.setGameState.bind(this));
-
-    //db.player.on('value', this.receivePlayerList.bind(this));
+  init: function (gameDB, myGuid) {
+    this.gameDB = gameDB;
+    this.myGuid = myGuid;
   },
 
 
   /*
    * set up the new game turn
    * */
-  newTurn: function (player) {
+  newTurn: function ( guid ) {
     console.log('starting the new turn');
-    if (typeof this.player == "object" && this.player.updateScore) {
-      this.player.updateScore(this.turnScore);
-    }
-    this.player = player;
-    this.turnScore = 0;
-    this.turnOver = false;
+    this.gameState.turnScore = 0;
+    this.gameState.turnOver = false;
+    this.gameState.throwNumber = 1;
+    this.gameState.currentPlayerGuid = guid;
 
     var die;
     for (var id in this.allDieArray) {
-      die = this[this.allDieArray[id]];
+      die = this.gameState[this.allDieArray[id]];
       die.value = '--';
       die.locked = (id === "crash" || id === "pit");
       die.thrownYet = false;
     }
+    this.gameDB.update(this.gameState);
+  },
+
+
+  /*
+   * start the game
+   * */
+  startGame: function () {
+    console.log('starting the new game');
+    this.gameState.gameStarted = true;
+    this.gameState.turnScore = 0;
+    this.gameState.throwNumber = 1;
+    this.gameState.turnOver = false;
+
+    var die;
+    for (var id in this.allDieArray) {
+      die = this.gameState[this.allDieArray[id]];
+      die.value = '--';
+      die.locked = (id === "crash" || id === "pit");
+      die.thrownYet = false;
+    }
+    this.gameDB.update(this.gameState);
   },
 
 
@@ -135,46 +133,46 @@ module.exports = {
    * Throw the dice!
    * */
   newThrow(){
-    if (this.turnOver) {
+    if (this.gameState.turnOver) {
       console.log("Can't throw! Turn over.");
       return false;
     }
-    this.throwNumber += 1;
+    this.gameState.throwNumber += 1;
 
     var die;
     for (var id in this.commonDieArray) {
-      die = this[this.commonDieArray[id]];
+      die = this.gameState[this.commonDieArray[id]];
       if (!die.locked && !die.disabled) {
         die.value = DiceCup.roll(die.type);
       }
     }
-    if (this['flag'].value != 'green') {
-      this.turnOver = true;
-      if (this['flag'].value == 'black') {
+    if (this.gameState['flag'].value != 'green') {
+      this.gameState.turnOver = true;
+      if (this.gameState['flag'].value == 'black') {
         console.log("Tripped!");
-      } else if (this['flag'].value == 'red') {
+      } else if (this.gameState['flag'].value == 'red') {
         console.log("Got in a fight!");
-        this.crash.value = DiceCup.roll('crash');
-      } else if (this['flag'].value == 'yellow') {
+        this.gameState.crash.value = DiceCup.roll('crash');
+      } else if (this.gameState['flag'].value == 'yellow') {
         console.log("Slowed by debris!");
-        this.pit.value = DiceCup.roll('pit');
+        this.gameState.pit.value = DiceCup.roll('pit');
       }
     }
 
     if (this.power.value == 'flat') {
-      this.power.disabled = true;
+      this.gameState.power.disabled = true;
     }
 
     this.calculateTurnScore();
-    this.gameDB.update(this.getGameState());
+    this.dbUpdate();
     //return this.getGameState();
   },
 
 
   /*
-   * Returns the details of this game for serialization and sync
+   * Returns a default game for initialization
    * */
-  getGameState: function () {
+  getDefaultGameState: function () {
     /*if (!this.myTurn) {
       console.log("We don't send sync data unless it's our turn.");
       return false;
@@ -187,12 +185,12 @@ module.exports = {
       die = this[dieName];
       gameState[dieName] = die;
     }
-    gameState.turnScore = this.turnScore;
-    gameState.throwNumber = this.throwNumber;
+    gameState.turnScore = 0;
+    gameState.throwNumber = 1;
     //gameState.myTurn = this.myTurn; // can't sync this.  It's not the same for all players.
-    gameState.currentPlayerGuid = this.currentPlayerGuid;
-    gameState.turnOver = this.turnOver;
-    gameState.gameStarted = this.gameStarted;
+    gameState.currentPlayerGuid = 0;
+    gameState.turnOver = false;
+    gameState.gameStarted = false;
 
     // push the gameState
     //this.gameDB.update(gameState);
@@ -205,33 +203,7 @@ module.exports = {
    * Receives the details of this game for serialization and sync
    * */
   setGameState: function (gameState) {
-    console.log('gameState received', gameState.val());
-    gameState = gameState.val();
-    if (typeof gameState != "object") {
-      console.log('cannot sync. gameState invalid.(', gameState, ')');
-      return false;
-    }
-    if( !gameState || Object.keys(gameState).length <= 1 ){ // if the state of the game is null or empty
-      console.log('No game state found. Creating one');
-      this.gameDB.update(this.getGameState()); // push a default one
-      return true;
-    }
-    /*if (this.myTurn) {
-      console.log('unable to receive sync data during my own turn');
-      return false;
-    }*/
-
-    var die, dieName;
-    for (var dieId in this.allDieArray) {
-      dieName = this.allDieArray[dieId];
-      die = gameState[dieName];
-    }
-    this.turnScore = parseInt(gameState.turnScore);
-    this.throwNumber = parseInt(gameState.throwNumber);
-    //this.myTurn = Boolean(gameState.myTurn); // can't sync this.  It's not the same for all players.
-    this.currentPlayerGuid = gameState.currentPlayerGuid;
-    this.turnOver = Boolean(gameState.turnOver);
-    this.gameStarted = Boolean(gameState.gameStarted);
+    this.gameState = gameState;
   },
 
 
@@ -245,6 +217,11 @@ module.exports = {
     this.gameDB.update(this.getGameState()); // notify the others I've toggled it
     return this[die].locked;
   },
+
+
+  /*
+  * End my turn
+  * */
   endTurn: function () {
     this.turnOver = true;
     return this.getGameState();
@@ -257,23 +234,23 @@ module.exports = {
   calculateTurnScore: function () {
     // first, sum the common dice
     var sum = this.sumCommonDice();
-    switch (this.flag.value) {
+    switch (this.gameState.flag.value) {
       case 'yellow':
         // pit (debris)
-        if (this.pit.value == 'caution') {
+        if (this.gameState.pit.value == 'caution') {
           alert('CAUTION LIGHT');
         } else {
-          sum += parseInt(this.pit.value);
+          sum += parseInt(this.gameState.pit.value);
         }
         break;
       case 'red':
         // crash (fighting)
-        if (this.crash.value == 'crash') {
+        if (this.gameState.crash.value == 'crash') {
           alert('CRASH');
-        } else if (this.crash.value == 'crashOut') {
+        } else if (this.gameState.crash.value == 'crashOut') {
           alert('CRASH OUT');
         } else {
-          sum += parseInt(this.crash.value);
+          sum += parseInt(this.gameState.crash.value);
         }
         break;
       case 'black':
@@ -286,7 +263,7 @@ module.exports = {
       console.log('stall');
       sum = 0;
     }
-    this.turnScore = sum;
+    this.gameState.turnScore = sum;
   },
 
 
@@ -297,7 +274,7 @@ module.exports = {
     var die;
     var sum = 0;
     for (var dieId in this.commonDieArray) {
-      die = this[this.commonDieArray[dieId]];
+      die = this.gameState[this.commonDieArray[dieId]];
       if (!die.disabled && !(die.type == 'flag')) { // skip disabled dice (flat tires) and the flag die
         sum += parseInt(die.value);
       }
@@ -318,118 +295,13 @@ module.exports = {
 
 
   /*
-   * Listen for changes to the player list so we can react to them
+   * Send the changes to the db!
    * */
-  receivePlayerList: function (rawData) {
-    var playerList = rawData.val();
-    console.log('game is listening to player list!', playerList);
+  dbUpdate: function(){
+    if( !this.gameDB ){ return false; }
 
-    /*if(this.gameStarted) {
-      this.myTurnCheck(playerList);
-    }else{
-      this.startGameCheck(playerList);
-    }*/
-  },
-
-
-  /*
-  * Check if it's my turn
-  * */
-  myTurnCheck: function(playerList) {
-    var player;
-    var playerTurnCount = 0;
-    var activePlayer;
-    for (var guid in playerList) {
-      player = playerList[guid];
-      if(player.myTurn && player.guid == this.myPlayer.guid){
-        console.log("It's my turn!");
-        this.myTurn = true; // It's my turn!
-      }
-      if(player.myTurn){
-        activePlayer = player;
-        playerTurnCount += 1;
-      }
-    }
-    // sanity checking
-    if(playerTurnCount == 0){
-      console.log("Whoa.. it's nobody's turn!");
-    }else if(playerTurnCount > 1){
-      console.log("Whoa.. more than on player thinks it's their turn!");
-    }else{
-      this.currentPlayerGuid = activePlayer.guid;
-    }
-
-    // all functions should send their changes to the db
-    var updates = this.getGameState();
-    console.log('updates', updates);
-    this.gameDB.update(updates);
-
-    // this one also returns whether it's my turn or not
-    return this.myTurn;
-  },
-
-  /*
-   * Check the player state to see if we should launch the game
-   * */
-  startGameCheck: function (playerList) {
-    // Loop through the players
-    var player;
-    var playerCount = 0;
-    for (var guid in playerList) {
-      player = playerList[guid];
-      if (player.joinedGame) {
-        playerCount += 1;
-      }
-      if (player.joinedGame && !player.ready) { // if any of them aren't ready,
-        console.log('player', player.name, "isn't ready");
-        return false; // terminate this function
-      }
-    }
-    if (playerCount == 0 || playerCount == 1) {
-      console.log('Game requires at least two players right?');
-      return false;
-    }
-
-    //this.startGame(playerList);
-  },
-
-
-  /*
-   * Check the player state to see if we should launch the game
-   * */
-  startGame: function (playerList) {
-    // Time to set up the game!
-    var firstPlayer;
-    for (var guid in playerList) {
-      player = playerList[guid];
-
-
-      // reset the scores
-      player.score = 0;
-      player.turnScore = 0;
-
-      // clear myTurn
-      player.myTurn = (player.turnOrder == 1);
-
-      if (player.turnOrder == 1) { // who's on first?
-        firstPlayer = player;
-        this.currentPlayerGuid = player.guid;
-      }
-    }
-
-    if (this.myPlayer.guid == firstPlayer.guid) {
-      this.myTurn = true;
-
-      // update the new state
-      this.myPlayer.playerListDB.update(playerList);
-
-      this.gameStarted = true;
-      var gameUpdates = this.getGameState();
-      this.gameDB.update(gameUpdates);
-      this.newTurn(firstPlayer); // start the game!
-    } else {
-      this.myTurn = false;
-    }
-
+    //delete this.gameDB['.key'];  // not sure what this is or how it gets here but it screws everything up
+    this.gameDB.update( this.gameState );
   }
+
 };
