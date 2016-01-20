@@ -26,9 +26,6 @@ module.exports = React.createClass({
     };
   },
   componentWillMount: function() {
-    //this.bindAsObject(this.props.myPlayer.playerDB, 'myPlayer');
-    //this.props.myPlayer.playerDB.on('value', this.receiveMyPlayer );
-
     // subscribe to changes to the playerList
     this.bindAsObject(this.props.DB.player, 'playerList');
     this.props.DB.player.on('value', this.receivePlayerList );
@@ -41,9 +38,7 @@ module.exports = React.createClass({
     // is it my turn?
     var myTurn = (this.state) ? this.state.myTurn : this.props.myTurn;
     var playerList = this.state.playerList;
-    //var gameState = this.state.gameState;
     this.props.playerListUtil.setPlayerList(playerList);
-    //this.props.gameUtil.setGameState(gameState);
     myPlayer = this.props.playerListUtil.getPlayerByGuid( this.props.myGuid );
 
     if( myPlayer && myPlayer.showGame ){  // show: true
@@ -189,7 +184,6 @@ module.exports = React.createClass({
   },
   receivePlayerList: function( snapshot ){
     var playerList = snapshot.val();
-    console.log('game module got playerList', snapshot.val());
     this.setState({
       playerList: playerList
     });
@@ -203,39 +197,9 @@ module.exports = React.createClass({
     var gameState = this.state.gameState;
     if(this.state && gameState && Object.keys(gameState).length > 1){ // I have a gameState and a playerList
       console.log('This is the heavy spot where all the important logic goes', gameState, playerList);
-    }else{
-      console.log("I don't have a game state?", gameState);
     }
-
-    /*for(var guid in playerList){
-      if(guid == this.props.myPlayer.guid){
-        console.log("Found my player", playerList[guid]);
-        this.setState({
-          myTurn: playerList[guid].myTurn
-        });
-      }
-    }
-
-    if(this.state && this.state.gameState){
-      //console.log("I have a playerlist and a gamestate. Let's see if we are ready to start the game");
-      var countPlayers = this.countGamePlayers();
-
-      //console.log('count players', countPlayers);
-      //console.log('ready players', this.countReadyGamePlayers());
-      //console.log('game state', this.state.gameState);
-      if(countPlayers >= 2 && countPlayers == this.countReadyGamePlayers() && this.state.gameState.gameStarted === false){
-        //console.log("We can start the game!");
-        if(this.state.myPlayer.turnOrder == 1){
-          //console.log("The game is starting and I go first!");
-          this.props.gameUtil.startGame( this.state.playerList );
-        }
-      }else{
-        //console.log("We can't start the game. :(");
-      }
-    }*/
   },
   receiveGameState: function( snapshot ){
-    console.log('game module got game state', snapshot.val());
     this.setState({
       gameState: snapshot.val()
     });

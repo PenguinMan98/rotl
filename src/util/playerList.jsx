@@ -1,4 +1,3 @@
-var firebaseURL = "https://rotl.firebaseio.com/";
 
 module.exports = {
   myGuid: 0, // my guid
@@ -64,44 +63,6 @@ module.exports = {
 
 
   /*
-  * Randomize the turn order
-  * */
-  randomizeTurnOrder( game ){
-    /*if(!game.gameStarted){
-      console.log("game isn't started");
-    }*/
-    var turnOrderArr = [];
-    for(var guid in this.playerList){
-      turnOrderArr.push(guid);
-    }
-    console.log('random turn order', this.playerList);
-    this.shuffle(turnOrderArr);
-    for(var index in turnOrderArr){
-      this.playerList[turnOrderArr[index]].turnOrder = index;
-    }
-    console.log('random turn order', this.playerList);
-  },
-
-  shuffle: function (array) {
-    var currentIndex = array.length, temporaryValue, randomIndex;
-
-    // While there remain elements to shuffle...
-    while (0 !== currentIndex) {
-
-      // Pick a remaining element...
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex -= 1;
-
-      // And swap it with the current element.
-      temporaryValue = array[currentIndex];
-      array[currentIndex] = array[randomIndex];
-      array[randomIndex] = temporaryValue;
-    }
-
-    return array;
-  },
-
-  /*
    * Votes
    * */
   castVote: function(vote, type){
@@ -114,8 +75,6 @@ module.exports = {
     if(vote == 'start'){
 
     }
-
-
   },
 
   /*
@@ -123,7 +82,6 @@ module.exports = {
   * */
   joinGame( myGuid, position ){
     // loop through the players
-    //console.log('joining game', this.playerList);
     var player;
     for( var guid in this.playerList ){
       player = this.playerList[guid];
@@ -138,11 +96,10 @@ module.exports = {
 
 
   /*
-  * Players all indicate they are ready for the game to start
-  * */
+   * Players all indicate they are ready for the game to start
+   * */
   setReady: function( myGuid ){
     // loop through the players
-    console.log('Setting me ready', this.playerList);
     var player;
     for( var guid in this.playerList ){
       player = this.playerList[guid];
@@ -157,21 +114,37 @@ module.exports = {
 
 
   /*
+   * Players all indicate they are ready for the game to start
+   * */
+  addScore: function( myGuid, score ){
+    // loop through the players
+    var player;
+    for( var guid in this.playerList ){
+      player = this.playerList[guid];
+      if( guid == myGuid ){ // find me
+        // update my score
+        player.score = parseInt(player.score) + score;
+      }
+    }
+    // send the updates to the db
+    this.dbUpdate();
+  },
+
+
+  /*
   * Return the guid of the next player
   * */
-  getNextPlayer( guid ){
-    var nextPlayer;
+  getNextPlayer( currentPlayerGuid ){
     var tempPlayerList = [];
     var guidFound = false;
     var currentPosition;
     var player;
-    var sortedPlayerList = {};
 
     // make a sortable simple list of players
     for(var guid in this.playerList){
       player = this.playerList[guid];
       // check for the current guid
-      if(player.guid == guid){
+      if(player.guid == currentPlayerGuid){
         guidFound = true;
         currentPosition = player.turnOrder;
       }
@@ -180,7 +153,6 @@ module.exports = {
         turnOrder: player.turnOrder
       });
     }
-    console.log('before sorting playerlist', JSON.stringify(tempPlayerList));
     // sort them in turn order
     tempPlayerList.sort(function(a,b){
       return a.turnOrder - b.turnOrder;
@@ -188,14 +160,12 @@ module.exports = {
 
     if(tempPlayerList.length > 0){
       player = tempPlayerList[tempPlayerList.length - 1];
-      if(player.guid == guid){
-        return tempPlayerList[0].guid;
+      if(player.guid == currentPlayerGuid){ // if the last player is the current player
+        return tempPlayerList[0].guid; // then the first player is next
       }
-    }else{
-      console.log('Error no players!');
+    }else{// no players??
       return false;
     }
-    console.log('after sorting playerlist', JSON.stringify(tempPlayerList));
     while(tempPlayerList.length > 0){
       player = tempPlayerList.shift();
       if(player.turnOrder > currentPosition){
@@ -210,7 +180,6 @@ module.exports = {
   dbUpdate: function(){
     if( !this.playerListDB ){ return false; }
 
-    console.log('joined game', this.playerList);
     delete this.playerList['.key'];  // not sure what this is or how it gets here but it screws everything up
     this.playerListDB.update(this.playerList);
   }

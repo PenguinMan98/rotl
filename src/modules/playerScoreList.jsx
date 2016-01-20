@@ -1,5 +1,4 @@
 var React = require('react');
-var Firebase = require('firebase');
 var ReactFire = require('reactfire');
 
 var PlayerScore = require('./playerScore');
@@ -29,7 +28,6 @@ module.exports = React.createClass({
       self.setState({
         playerList: snapshot.val()
       });
-      console.log('PSL got PlayerList update', snapshot.val());
     });
   },
   render: function(){

@@ -51,16 +51,8 @@ module.exports = React.createClass({
         return <div className="row">
           <div id="roll-btn" className="col-md-1">
             <div id="player-turn">Go {currentPlayer.name}!</div>
-            <input
-              type="button"
-              value="Roll"
-              onClick={this.handleRoll}
-            /><br />
-            <input
-              type="button"
-              value="End Turn"
-              onClick={this.handleEndTurn}
-            />
+            {this.rollButton()}
+            {this.endTurnButton()}
           </div>
           {this.dice()}
           <div id="turn-stats" className="col-md-2">
@@ -104,9 +96,44 @@ module.exports = React.createClass({
       </div>
     }
   },
+  rollButton: function(){
+    var myTurn = (this.state.gameState.currentPlayerGuid == this.props.myGuid);
+    if(myTurn) {
+      if (!this.state.gameState.turnOver) {
+        return [<input
+          type="button"
+          value="Roll"
+          onClick={this.handleRoll}
+        />,<br />]
+      } else {
+        /*return <input
+          type="button"
+          value="Roll"
+          disabled="disabled"
+        />*/
+      }
+    }
+  },
+  endTurnButton: function(){
+    var myTurn = (this.state.gameState.currentPlayerGuid == this.props.myGuid);
+    if(myTurn) {
+      if (this.state.gameState.throwNumber > 1) {
+        return <input
+          type="button"
+          value="End Turn"
+          onClick={this.handleEndTurn}
+        />
+      } else {
+        /*return <input
+          type="button"
+          value="End Turn"
+          disabled="disabled"
+        />*/
+      }
+    }
+  },
   handleRoll: function(){
     if( this.state.gameState.currentPlayerGuid == this.props.myGuid ) {
-      console.log('roll the dice!');
       this.props.gameUtil.setGameState(this.state.gameState);
       this.props.gameUtil.newThrow();
     }else{
@@ -120,18 +147,14 @@ module.exports = React.createClass({
     //this.props.playerListUtil.setPlayerList(this.state.playerList);
   },
   handleEndTurn: function(){
-    console.log('End my turn');
+    this.props.gameUtil.setGameState(this.state.gameState);
     var score = this.state.gameState.turnScore;
 
     if( this.state.gameState.currentPlayerGuid == this.props.myGuid ) {
-      console.log('Ending my turn');
       this.props.playerListUtil.setPlayerList(this.state.playerList);
+      this.props.playerListUtil.addScore(this.props.myGuid, score);
       var nextPlayer = this.props.playerListUtil.getNextPlayer(this.props.myGuid);
-
-      this.props.gameUtil.setGameState(this.state.gameState);
       this.props.gameUtil.newTurn( nextPlayer );
-    }else{
-      console.log("Not my turn");
     }
   },
   dice: function(){
@@ -140,14 +163,20 @@ module.exports = React.createClass({
       var gameState = this.state.gameState;
 
       var myTurn = gameState.currentPlayerGuid == this.props.myGuid;
-      //console.log('gamepane rendering dice', myTurn);
       var dieName, die;
       for(var id in this.props.gameUtil.allDieArray){
         dieName = this.props.gameUtil.allDieArray[id];
         die = gameState[dieName];
 
         children.push(
-          <Die id={dieName} die={die} myTurn={myTurn} gameUtil={this.props.gameUtil} />
+          <Die
+            id={dieName}
+            die={die}
+            myTurn={myTurn}
+            turnOver={gameState.turnOver}
+            gameUtil={this.props.gameUtil}
+            gameState={this.state.gameState}
+          />
         )
       }
     }else{
@@ -169,8 +198,5 @@ module.exports = React.createClass({
     this.setState({
       playerList: snapshot.val()
     });
-  },
-  testCatchDieLock: function( e ){
-    console.log('I caught a Die Lock', e);
   }
 });

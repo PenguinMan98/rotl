@@ -91,7 +91,6 @@ module.exports = {
    * set up the new game turn
    * */
   newTurn: function ( guid ) {
-    console.log('starting the new turn');
     this.gameState.turnScore = 0;
     this.gameState.turnOver = false;
     this.gameState.throwNumber = 1;
@@ -112,7 +111,6 @@ module.exports = {
    * start the game
    * */
   startGame: function () {
-    console.log('starting the new game');
     this.gameState.gameStarted = true;
     this.gameState.turnScore = 0;
     this.gameState.throwNumber = 1;
@@ -159,7 +157,7 @@ module.exports = {
       }
     }
 
-    if (this.power.value == 'flat') {
+    if (this.gameState.power.value == 'flat') {
       this.gameState.power.disabled = true;
     }
 
@@ -210,21 +208,11 @@ module.exports = {
   /*
    * lock a die
    * */
-  toggleLock: function (die) {
-    if (this[die]) {
-      this[die].locked = !this[die].locked;
+  toggleLock: function (dieId, state) {
+    if (this.gameState[dieId]) {
+      this.gameState[dieId].locked = state;
+      this.dbUpdate();
     }
-    this.gameDB.update(this.getGameState()); // notify the others I've toggled it
-    return this[die].locked;
-  },
-
-
-  /*
-  * End my turn
-  * */
-  endTurn: function () {
-    this.turnOver = true;
-    return this.getGameState();
   },
 
 
@@ -273,9 +261,11 @@ module.exports = {
   sumCommonDice: function () {
     var die;
     var sum = 0;
+    var value;
     for (var dieId in this.commonDieArray) {
       die = this.gameState[this.commonDieArray[dieId]];
-      if (!die.disabled && !(die.type == 'flag')) { // skip disabled dice (flat tires) and the flag die
+      value = parseInt(die.value);
+      if (!die.disabled && !isNaN(value)) { // skip disabled dice (flat tires) and the flag die
         sum += parseInt(die.value);
       }
     }

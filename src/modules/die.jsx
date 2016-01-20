@@ -1,19 +1,25 @@
 var React = require('react');
 var diceCup = require('../util/dice');
 
+/*
+ *
+ * PASSED PROPS
+ * gameUtil   the game utility
+ * id         The id of this die
+ * die        An object containing information about the die
+ * myTurn     Boolean is it my turn?
+ * turnOver   Boolean is my turn over?
+ *
+ * We want the game state to refresh whenever there is a change
+ * to the playerList or the gameState
+ * */
 module.exports = React.createClass({
-  getInitialState: function(){
-    var die = this.props.gameUtil.getDie(this.props.id);
-    return{
-      locked: die.locked
-    }
-  },
   componentWillMount: function(){
     // do this when you load
   },
   render: function(){
     var die = this.props.die;
-    //console.log('rendering a die.', this.props, die);
+    //console.log('rendering a die.', this.props);
 
     if( die === null ){
       return <div className="col-md-1" id={this.props.id}>
@@ -28,31 +34,27 @@ module.exports = React.createClass({
     }
   },
   handleLockClick: function(){
-    var locked = !this.state.locked;
-    this.setState({
-      locked: locked
-    });
-    this.props.gameUtil.toggleLock(this.props.id);
+    var locked = !this.props.die.locked;
+    this.props.gameUtil.setGameState(this.props.gameState);
+    this.props.gameUtil.toggleLock(this.props.id, locked);
   },
   content: function( die, myTurn ){
     //console.log('rendering die', die, myTurn);
-    if(!this.state && myTurn){
-      return [<div>Ready</div>,
-        <input type="button" value={die.locked ? "Locked": "Play"} />];
-    }else if(!this.state && !myTurn){
-      return [<div>Ready</div>,
-        <input type="button" value={die.locked ? "Locked": "Play"} />];
-    }else if( myTurn ){
-      if( die.lockable ){
-        return [<div>{die.value}</div>,
+    var retVal = [];
+    retVal.push(<div>{die.value}</div>);
+    if( myTurn ){
+      if( die.disabled ){
+        retVal.push(<span>INJURED!</span>);
+      }else if( die.lockable && !this.props.turnOver ){
+        retVal.push(
           <input
             type="button"
             value={die.locked ? "Locked": "Play" }
-            onClick={this.testCatchDieLock}
-          />];
+            onClick={this.handleLockClick}
+          />);
       }
-      return <div>{die.value}</div>;
-    }else{
+      return retVal;
+    }else{ // not my turn
       if( die.lockable ){
         return [<div>{die.value}</div>,
           <span>{die.locked ? "Locked": "Play" }</span>];
