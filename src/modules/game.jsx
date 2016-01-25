@@ -160,7 +160,7 @@ module.exports = React.createClass({
     // set me ready
     if( this.state.gameState.winnerGuid ){ // if the game just ended
       this.props.playerListUtil.resetGame();
-      this.props.gameUtil.startGame();
+      this.props.gameUtil.resetGame();
     }
   },
 
@@ -294,17 +294,24 @@ module.exports = React.createClass({
     return gamePlayers;
   },
   checkWinConditions: function(){
-    var gameState = this.state.gameState;
-    this.props.gameUtil.setGameState(gameState);
-    var playerList = this.state.playerList;
-    this.props.playerListUtil.setPlayerList(playerList);
-    var myPlayer = this.props.playerListUtil.getPlayerByGuid( this.props.myGuid );
+    if( this.state
+        && this.state.playerList && Object.keys(this.state.playerList).length > 1
+        && this.state.gameState && Object.keys(this.state.gameState).length > 1) {
 
-    // If the player's combined score totals over 500 and they have a green light, they win.
-    if( myPlayer.score + gameState.turnScore >= 500 && !gameState.winnerGuid ){
-      if(gameState.flag.value === "green"){
-        this.props.gameUtil.iWin(this.props.myGuid);
-        //this.props.playerListUtil.iWin(this.props.myGuid);
+      var gameState = this.state.gameState;
+      this.props.gameUtil.setGameState(gameState);
+      var playerList = this.state.playerList;
+      this.props.playerListUtil.setPlayerList(playerList);
+      var myPlayer = this.props.playerListUtil.getPlayerByGuid( this.props.myGuid );
+      var myTurn = myPlayer.guid == gameState.currentPlayerGuid;
+
+      // If the player's combined score totals over 500 and they have a green light, they win.
+      if( myTurn && myPlayer.score + gameState.turnScore >= 500 && !gameState.winnerGuid ){
+        console.log('my turn', myTurn, 'my banked score:', myPlayer.score, 'my turn score:', gameState.turnScore );
+        if(gameState.flag.value === "green"){
+          this.props.gameUtil.iWin(this.props.myGuid);
+          this.props.playerListUtil.addScore(this.props.myGuid, gameState.turnScore);
+        }
       }
     }
   }

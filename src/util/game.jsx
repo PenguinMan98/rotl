@@ -96,13 +96,8 @@ module.exports = {
     this.gameState.throwNumber = 1;
     this.gameState.currentPlayerGuid = guid;
 
-    var die;
-    for (var id in this.allDieArray) {
-      die = this.gameState[this.allDieArray[id]];
-      die.value = '--';
-      die.locked = (id === "crash" || id === "pit");
-      die.thrownYet = false;
-    }
+    this.resetDice();
+    console.log('updating newTurn', this.gameState);
     this.gameDB.update(this.gameState);
   },
 
@@ -118,6 +113,7 @@ module.exports = {
     this.gameState.winnerGuid = false;
 
     this.resetDice();
+    console.log('starting game', this.gameState);
     this.gameDB.update(this.gameState);
   },
 
@@ -134,6 +130,7 @@ module.exports = {
     this.gameState.currentPlayerGuid = false;
 
     this.resetDice();
+    console.log('resetting game', this.gameState);
     this.gameDB.update(this.gameState);
   },
 
@@ -148,6 +145,7 @@ module.exports = {
       die.value = '--';
       die.locked = (id === "crash" || id === "pit");
       die.thrownYet = false;
+      die.disabled = false;
     }
   },
 
@@ -325,7 +323,8 @@ module.exports = {
   dbUpdate: function(){
     if( !this.gameDB ){ return false; }
 
-    //delete this.gameDB['.key'];  // not sure what this is or how it gets here but it screws everything up
+    delete this.gameState['.key'];  // not sure what this is or how it gets here but it screws everything up
+    console.log('updating', this.gameState);
     this.gameDB.update( this.gameState );
   }
 

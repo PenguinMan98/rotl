@@ -147,13 +147,15 @@ module.exports = React.createClass({
     //this.props.playerListUtil.setPlayerList(this.state.playerList);
   },
   handleEndTurn: function(){
-    this.props.gameUtil.setGameState(this.state.gameState);
-    var score = this.state.gameState.turnScore;
+    var gameState = this.state.gameState;
+    this.props.gameUtil.setGameState(gameState);
+    var score = gameState.turnScore;
 
-    if( this.state.gameState.currentPlayerGuid == this.props.myGuid ) {
+    if( gameState.currentPlayerGuid == this.props.myGuid ) {
       this.props.playerListUtil.setPlayerList(this.state.playerList);
       this.props.playerListUtil.addScore(this.props.myGuid, score);
       var nextPlayer = this.props.playerListUtil.getNextPlayer(this.props.myGuid);
+      console.log('next player?', nextPlayer);
       this.props.gameUtil.newTurn( nextPlayer );
     }
   },

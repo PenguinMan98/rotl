@@ -135,6 +135,7 @@ module.exports = {
   * Return the guid of the next player
   * */
   getNextPlayer( currentPlayerGuid ){
+    console.log('getNextPlayer called', currentPlayerGuid);
     var tempPlayerList = [];
     var guidFound = false;
     var currentPosition;
@@ -148,19 +149,23 @@ module.exports = {
         guidFound = true;
         currentPosition = player.turnOrder;
       }
-      tempPlayerList.push({
-        guid: player.guid,
-        turnOrder: player.turnOrder
-      });
+      if(player.guid){ // sometimes this is empty
+        tempPlayerList.push({
+          guid: player.guid,
+          turnOrder: player.turnOrder
+        });
+      }
     }
     // sort them in turn order
     tempPlayerList.sort(function(a,b){
       return a.turnOrder - b.turnOrder;
     });
+    console.log('sorted playerlist', tempPlayerList);
 
     if(tempPlayerList.length > 0){
       player = tempPlayerList[tempPlayerList.length - 1];
       if(player.guid == currentPlayerGuid){ // if the last player is the current player
+        console.log("I'm the last player");
         return tempPlayerList[0].guid; // then the first player is next
       }
     }else{// no players??
@@ -168,7 +173,9 @@ module.exports = {
     }
     while(tempPlayerList.length > 0){
       player = tempPlayerList.shift();
+      console.log('checking player', player);
       if(player.turnOrder > currentPosition){
+        console.log('This guy is next');
         return player.guid;
       }
     }
