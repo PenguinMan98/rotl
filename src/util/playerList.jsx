@@ -182,5 +182,22 @@ module.exports = {
 
     delete this.playerList['.key'];  // not sure what this is or how it gets here but it screws everything up
     this.playerListDB.update(this.playerList);
+  },
+
+  /*
+  * RESET the game
+  * */
+  resetGame: function(){
+    var player;
+    for( var guid in this.playerList ){
+      player = this.playerList[guid];
+      player.joinedGame = false;
+      player.myTurn = false;
+      player.score = 0;
+      player.showGame = false;
+      player.turnOrder = 0;
+      player.turnScore = 0;
+    }
+    this.dbUpdate();
   }
 };

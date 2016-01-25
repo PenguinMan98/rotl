@@ -60,7 +60,7 @@ module.exports = React.createClass({
           </div>
         </div>
       }else{ // the game hasn't started
-        // if it's my turn
+        // if I'm not the first player,
         if( gameState.currentPlayerGuid != myPlayer.guid ) {
           /*
            * SHOW THE WAIT MESSAGE

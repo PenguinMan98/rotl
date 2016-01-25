@@ -40,9 +40,40 @@ module.exports = React.createClass({
     var playerList = this.state.playerList;
     this.props.playerListUtil.setPlayerList(playerList);
     myPlayer = this.props.playerListUtil.getPlayerByGuid( this.props.myGuid );
+    if( !myPlayer ){
+      console.log("Can't really do anything without a local player");
+      return false;
+    }
+
+    var gameState = this.state.gameState;
+    this.props.gameUtil.setGameState(gameState);
+
+
 
     if( myPlayer && myPlayer.showGame ){  // show: true
-      if( myPlayer && myPlayer.joinedGame ){ // I've joined the game
+      if( gameState.winnerGuid ){
+        /*
+        * Show the winner and a button to restart the game
+        */
+        var winner = this.props.playerListUtil.getPlayerByGuid( gameState.winnerGuid );
+        return <div className="game-outer">
+          <PlayerScoreList
+            playerList={playerList}
+            DB={this.props.DB}
+          />
+          <div className="row">
+            <div className="col-md-offset-3 col-md-6 text-center">
+              The winner is: {winner.name}!<br />
+              <input
+                type="button"
+                value="New game!"
+                onClick={this.handleReset}
+              />
+            </div>
+          </div>
+        </div>
+
+      }else if( myPlayer && myPlayer.joinedGame ){ // I've joined the game
         //console.log('show me the game!');
         return <div className="game-outer">
           <PlayerScoreList
@@ -120,14 +151,28 @@ module.exports = React.createClass({
   },
 
   /*
-  * Handle player indicating they are ready to start the game
-  * */
+   * Handle player indicating they are ready to start the game
+   * */
+  handleReset: function(){
+    // make sure I'm working with the latest player list and game state
+    this.props.playerListUtil.setPlayerList(this.state.playerList);
+    this.props.gameUtil.setGameState(this.state.gameState);
+    // set me ready
+    if( this.state.gameState.winnerGuid ){ // if the game just ended
+      this.props.playerListUtil.resetGame();
+      this.props.gameUtil.startGame();
+    }
+  },
+
+  /*
+   * Handle player indicating they are ready to start the game
+   * */
   handleReady: function(){
-    if(this.state.gameState.gameStarted){ // if the game has already started, this is not allowed
+    if(this.state.gameState.gameStarted ){ // if the game has already started, this is not allowed
       return false;
     }
 
-    // make sure I'm working with the latest player list
+    // make sure I'm working with the latest player list and game state
     this.props.playerListUtil.setPlayerList(this.state.playerList);
     // set me ready
     this.props.playerListUtil.setReady(this.props.myGuid);
@@ -183,6 +228,7 @@ module.exports = React.createClass({
     });
   },
   receivePlayerList: function( snapshot ){
+    console.log('got player list');
     var playerList = snapshot.val();
     this.setState({
       playerList: playerList
@@ -196,7 +242,9 @@ module.exports = React.createClass({
 
     var gameState = this.state.gameState;
     if(this.state && gameState && Object.keys(gameState).length > 1){ // I have a gameState and a playerList
-      console.log('This is the heavy spot where all the important logic goes', gameState, playerList);
+      // check for win conditions
+      this.checkWinConditions();
+      // check for events that affect all players
     }
   },
   receiveGameState: function( snapshot ){
@@ -208,6 +256,11 @@ module.exports = React.createClass({
     // the dice are rolled
     // die lock state is changed
     // turn is ended or begun
+
+    var playerList = this.state.playerList;
+    if(this.state && playerList && Object.keys(playerList).length > 1){
+      this.checkWinConditions();
+    }
   },
   isItMyTurn: function( ){
 
@@ -239,6 +292,21 @@ module.exports = React.createClass({
       }
     }
     return gamePlayers;
+  },
+  checkWinConditions: function(){
+    var gameState = this.state.gameState;
+    this.props.gameUtil.setGameState(gameState);
+    var playerList = this.state.playerList;
+    this.props.playerListUtil.setPlayerList(playerList);
+    var myPlayer = this.props.playerListUtil.getPlayerByGuid( this.props.myGuid );
+
+    // If the player's combined score totals over 500 and they have a green light, they win.
+    if( myPlayer.score + gameState.turnScore >= 500 && !gameState.winnerGuid ){
+      if(gameState.flag.value === "green"){
+        this.props.gameUtil.iWin(this.props.myGuid);
+        //this.props.playerListUtil.iWin(this.props.myGuid);
+      }
+    }
   }
 });
 

@@ -6,8 +6,8 @@ module.exports = {
     'black': 1
   },
   crashDie: {
-    'crash': 1,
-    'crashOut': 1,
+    //'crash': 1,
+    //'crashOut': 1,
     '-10': 1,
     '-20': 1,
     '-30': 1,

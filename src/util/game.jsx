@@ -115,6 +115,7 @@ module.exports = {
     this.gameState.turnScore = 0;
     this.gameState.throwNumber = 1;
     this.gameState.turnOver = false;
+    this.gameState.winnerGuid = false;
 
     var die;
     for (var id in this.allDieArray) {
@@ -276,11 +277,21 @@ module.exports = {
   /*
    * query a die
    * */
-  getDie(die){
+  getDie: function(die){
     if (this[die]) {
       return this[die];
     }
     return false;
+  },
+
+
+  /*
+  * Process a win!
+  * */
+  iWin: function( winnerGuid ){
+    this.gameState.winnerGuid = winnerGuid;
+    this.gameState.turnOver = true;
+    this.dbUpdate();
   },
 
 
