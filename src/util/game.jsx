@@ -111,8 +111,13 @@ module.exports = {
    * start the game
    * */
   startGame: function () {
-    this.resetGame();
     this.gameState.gameStarted = true;
+    this.gameState.turnScore = 0;
+    this.gameState.throwNumber = 1;
+    this.gameState.turnOver = false;
+    this.gameState.winnerGuid = false;
+
+    this.resetDice();
     this.gameDB.update(this.gameState);
   },
 
@@ -128,6 +133,15 @@ module.exports = {
     this.gameState.winnerGuid = false;
     this.gameState.currentPlayerGuid = false;
 
+    this.resetDice();
+    this.gameDB.update(this.gameState);
+  },
+
+
+  /*
+   * reset dice
+   * */
+  resetDice: function () {
     var die;
     for (var id in this.allDieArray) {
       die = this.gameState[this.allDieArray[id]];
@@ -135,7 +149,6 @@ module.exports = {
       die.locked = (id === "crash" || id === "pit");
       die.thrownYet = false;
     }
-    this.gameDB.update(this.gameState);
   },
 
 
