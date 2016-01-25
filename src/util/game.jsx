@@ -111,11 +111,22 @@ module.exports = {
    * start the game
    * */
   startGame: function () {
+    this.resetGame();
     this.gameState.gameStarted = true;
+    this.gameDB.update(this.gameState);
+  },
+
+
+  /*
+   * reset the game
+   * */
+  resetGame: function () {
+    this.gameState.gameStarted = false;
     this.gameState.turnScore = 0;
     this.gameState.throwNumber = 1;
     this.gameState.turnOver = false;
     this.gameState.winnerGuid = false;
+    this.gameState.currentPlayerGuid = false;
 
     var die;
     for (var id in this.allDieArray) {
