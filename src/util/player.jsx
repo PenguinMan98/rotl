@@ -89,7 +89,6 @@ module.exports = {
   * Receives player data from the server
   * */
   sync: function( snapshot ){
-    console.log('player syncing');
     var player = snapshot.val();
     if(player) {
       // props

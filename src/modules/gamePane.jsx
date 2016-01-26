@@ -155,7 +155,6 @@ module.exports = React.createClass({
       this.props.playerListUtil.setPlayerList(this.state.playerList);
       this.props.playerListUtil.addScore(this.props.myGuid, score);
       var nextPlayer = this.props.playerListUtil.getNextPlayer(this.props.myGuid);
-      console.log('next player?', nextPlayer);
       this.props.gameUtil.newTurn( nextPlayer );
     }
   },

@@ -10,6 +10,7 @@ var GamePane = require('./gamePane');
  * playerListUtil   the player list utility
  * DB               An object containing db references (player, chat, game)
  * myGuid           My Guid!
+ * myPlayer         My Player
  *
  * We want the game state to refresh whenever there is a change
  * to the playerList or the gameState
@@ -40,10 +41,10 @@ module.exports = React.createClass({
     var playerList = this.state.playerList;
     this.props.playerListUtil.setPlayerList(playerList);
     myPlayer = this.props.playerListUtil.getPlayerByGuid( this.props.myGuid );
-    if( !myPlayer ){
+    /*if( !myPlayer ){
       console.log("Can't really do anything without a local player");
       return false;
-    }
+    }*/
 
     var gameState = this.state.gameState;
     this.props.gameUtil.setGameState(gameState);
@@ -219,7 +220,6 @@ module.exports = React.createClass({
     this.props.myPlayer.joinGame( false );
   },
   receiveMyPlayer: function( snapshot ){
-    //console.log('game module got my player', snapshot.val());
 
     // I shouldn't get this event until the player has submitted their own in-game name.
     this.setState({
@@ -228,23 +228,41 @@ module.exports = React.createClass({
     });
   },
   receivePlayerList: function( snapshot ){
-    console.log('got player list');
     var playerList = snapshot.val();
-    this.setState({
-      playerList: playerList
-    });
+    if( playerList !== null && typeof playerList === 'object' && Object.keys(playerList).length > 0){
+      this.setState({
+        playerList: playerList
+      });
 
-    // when I receive player data, this can mean a number of things
-    // If the game hasn't started, a new player joined or readied
-    // A vote to start the game
-    // if the game is started, a vote to skip, restart, etc.
-    // Or a player dropping out
+      // if I'm not in the playerList, then add me.
+      var foundMe = false;
+      for( var guid in playerList ){
+        if( guid == this.props.myGuid ){
+          foundMe = true;
+        }
+      }
+      if( !foundMe ){
+        myPlayer = {};
+        myPlayer[this.props.myGuid] = this.props.myPlayer.props();
+        this.props.playerListUtil.playerListDB.update(myPlayer);
+      }
 
-    var gameState = this.state.gameState;
-    if(this.state && gameState && Object.keys(gameState).length > 1){ // I have a gameState and a playerList
-      // check for win conditions
-      this.checkWinConditions();
-      // check for events that affect all players
+      // when I receive player data, this can mean a number of things
+      // If the game hasn't started, a new player joined or readied
+      // A vote to start the game
+      // if the game is started, a vote to skip, restart, etc.
+      // Or a player dropping out
+
+      var gameState = this.state.gameState;
+      if(this.state && gameState && Object.keys(gameState).length > 1){ // I have a gameState and a playerList
+        // check for win conditions
+        this.checkWinConditions();
+        // check for events that affect all players
+      }
+    }else if( playerList === null ){
+      myPlayer = {};
+      myPlayer[this.props.myGuid] = this.props.myPlayer.props();
+      this.props.playerListUtil.playerListDB.update(myPlayer);
     }
   },
   receiveGameState: function( snapshot ){
@@ -307,7 +325,6 @@ module.exports = React.createClass({
 
       // If the player's combined score totals over 500 and they have a green light, they win.
       if( myTurn && myPlayer.score + gameState.turnScore >= 500 && !gameState.winnerGuid ){
-        console.log('my turn', myTurn, 'my banked score:', myPlayer.score, 'my turn score:', gameState.turnScore );
         if(gameState.flag.value === "green"){
           this.props.gameUtil.iWin(this.props.myGuid);
           this.props.playerListUtil.addScore(this.props.myGuid, gameState.turnScore);

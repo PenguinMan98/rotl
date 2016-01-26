@@ -79,6 +79,7 @@ var App = React.createClass({
 
     if(playerList['.key']){ // this is a nuisance. I wonder if this is my fault.
       delete playerList['.key'];
+      delete playerList['.value'];
     }
 
     //console.log('app players', playerList);
@@ -93,6 +94,7 @@ var App = React.createClass({
           playerListUtil={playerListUtil}
           DB={DB}
           myGuid={myPlayer.guid}
+          myPlayer={myPlayer}
         />
         <hr />
         <Chat chatLog={chatLog} myPlayer={myPlayer} playerList={playerList} />
