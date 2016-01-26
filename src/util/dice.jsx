@@ -1,9 +1,9 @@
 module.exports = {
   flagDie: {
-    'green': 9,
-    'red': 1,
-    'yellow': 1,
-    'black': 1
+    'green': 15, // 9
+    'red': 2,    // 1
+    'yellow': 2, // 1
+    'black': 1   // 1
   },
   crashDie: {
     //'crash': 1,
@@ -20,9 +20,9 @@ module.exports = {
   powerDie: {
     'flat': 1,
     '0': 3,
-    '5': 1,
-    '10': 1,
-    '15': 1,
+    '5': 2,   // 1
+    '10': 2,  // 1
+    '15': 2,  // 1
     '20': 1,
     '25': 1,
     '30': 1,
@@ -38,7 +38,7 @@ module.exports = {
     '25': 1
   },
   pitDie: {
-    'caution': 1,
+    //'caution': 1,
     '0': 4,
     '-10': 4,
     '-20': 2,

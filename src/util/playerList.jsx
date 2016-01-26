@@ -149,7 +149,7 @@ module.exports = {
         guidFound = true;
         currentPosition = player.turnOrder;
       }
-      if(player.guid){ // sometimes this is empty
+      if(player.guid && player.joinedGame){ // only if the player exists and is in the game,
         tempPlayerList.push({
           guid: player.guid,
           turnOrder: player.turnOrder
