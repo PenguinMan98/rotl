@@ -229,7 +229,8 @@ module.exports = React.createClass({
     this.props.gameUtil.dbUpdate();
   },
   handleSpectateGame: function(){
-    this.props.myPlayer.joinGame( false );
+    this.props.playerListUtil.setPlayerList(this.state.playerList);
+    this.props.playerListUtil.spectateGame(this.props.myGuid);
   },
   receiveMyPlayer: function( snapshot ){
 

@@ -78,8 +78,8 @@ module.exports = {
   },
 
   /*
-  * Tell the player at this guid to join the game
-  * */
+   * Tell the player at this guid to join the game
+   * */
   joinGame( myGuid, position ){
     // loop through the players
     var player;
@@ -88,6 +88,23 @@ module.exports = {
       if( guid == myGuid ){ // find me
         player.joinedGame = true; // set me joined
         player.turnOrder = position; // set my position
+      }
+    }
+    // send the updates to the db
+    this.dbUpdate();
+  },
+
+
+  /*
+   * Tell the player at this guid to spectate the game
+   * */
+  spectateGame( myGuid ){
+    // loop through the players
+    var player;
+    for( var guid in this.playerList ){
+      player = this.playerList[guid];
+      if( guid == myGuid ){ // find me
+        player.showGame = true; // show the game
       }
     }
     // send the updates to the db
