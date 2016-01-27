@@ -135,10 +135,9 @@ module.exports = {
   * Return the guid of the next player
   * */
   getNextPlayer( currentPlayerGuid ){
-    console.log('getNextPlayer called', currentPlayerGuid);
     var tempPlayerList = [];
     var guidFound = false;
-    var currentPosition;
+    var currentPosition = 0;
     var player;
 
     // make a sortable simple list of players
@@ -156,11 +155,11 @@ module.exports = {
         });
       }
     }
+
     // sort them in turn order
     tempPlayerList.sort(function(a,b){
       return a.turnOrder - b.turnOrder;
     });
-    console.log('sorted playerlist', tempPlayerList);
 
     if(tempPlayerList.length > 0){
       player = tempPlayerList[tempPlayerList.length - 1];
@@ -188,6 +187,7 @@ module.exports = {
     if( !this.playerListDB ){ return false; }
 
     delete this.playerList['.key'];  // not sure what this is or how it gets here but it screws everything up
+    delete this.playerList['.value'];  // not sure what this is or how it gets here but it screws everything up
     this.playerListDB.update(this.playerList);
   },
 
@@ -202,9 +202,32 @@ module.exports = {
       player.myTurn = false;
       player.score = 0;
       player.showGame = false;
+      player.ready = false;
       player.turnOrder = 0;
       player.turnScore = 0;
     }
     this.dbUpdate();
+  },
+
+  /*
+  * Am I ready to start the game?
+  * */
+  readyToStart: function(){
+    var player;
+    var ready = true;
+    var playerCount = 0;
+    for( var guid in this.playerList ) {
+      player = this.playerList[guid];
+      if(player.joinedGame) {
+        playerCount += 1;
+        if (!player.ready) {
+          ready = false;
+        }
+      }
+    }
+    if( playerCount < 2 ){
+      return false;
+    }
+    return ready;
   }
 };

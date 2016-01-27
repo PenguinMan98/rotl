@@ -40,9 +40,10 @@ module.exports = React.createClass({
       && this.state.playerList && Object.keys(this.state.playerList).length > 1){
       var gameState = this.state.gameState;
       var playerList = this.state.playerList;
-      this.props.playerListUtil.setPlayerList( playerList );
-      myPlayer = this.props.playerListUtil.getPlayerByGuid( this.props.myGuid );
-      currentPlayer = this.props.playerListUtil.getPlayerByGuid( gameState.currentPlayerGuid );
+      var playerListUtil = this.props.playerListUtil;
+      playerListUtil.setPlayerList( playerList );
+      myPlayer = playerListUtil.getPlayerByGuid( this.props.myGuid );
+      currentPlayer = playerListUtil.getPlayerByGuid( gameState.currentPlayerGuid );
       // If the game has started,
       if(this.state.gameState.gameStarted){
         /*
@@ -78,7 +79,8 @@ module.exports = React.createClass({
             <div className="col-md-6 col-md-offset-3">
               <input
                 type="button"
-                value="Start the Game!"
+                value={!playerListUtil.readyToStart()?"Waiting for the other players...":"Start the Game!"}
+                disabled={!playerListUtil.readyToStart()}
                 onClick={this.handleStartGame}
               />
             </div>
@@ -191,9 +193,22 @@ module.exports = React.createClass({
     return children;
   },
   updateGameState: function( gameState ){
-    this.setState({
-      gameState: gameState.val()
-    });
+    gameState = gameState.val();
+    if(gameState === null){
+      // If my gameState is null, then the db got reset. Reset the player list too.
+      gameState = this.props.gameUtil.getDefaultGameState();
+      this.props.gameUtil.setGameState(gameState);
+      this.props.gameUtil.dbUpdate();
+
+      if(this.state && this.state.playerList){
+        this.props.playerListUtil.setPlayerList(this.state.playerList);
+        this.props.playerListUtil.resetGame();
+      }
+    }else{
+      this.setState({
+        gameState: gameState
+      });
+    }
   },
   updatePlayerList: function( snapshot ){
     this.setState({

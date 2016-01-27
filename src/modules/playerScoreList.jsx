@@ -16,7 +16,7 @@ module.exports = React.createClass({
   getInitialState: function(){
     // start like this
     return {
-      playerList: {}
+      playerList: this.props.playerList
     }
   },
   componentWillMount: function(){
@@ -36,7 +36,6 @@ module.exports = React.createClass({
     </div>
   },
   content: function(){
-    //console.log('psl rendering playerList', this.state.playerList);
     if(!this.state || ( this.state.playerList && Object.keys(this.state.playerList).length === 0 ) ){
       return <h4>Loading Game... Please wait.</h4>;
     }else{
@@ -44,7 +43,6 @@ module.exports = React.createClass({
       var player;
       for(var key in this.props.playerList){
         player = this.props.playerList[key];
-        //console.log('rendering psl', player);
         if( player && typeof player === 'object' && player.name && (player.joinedGame === true || player.joinedGame === "true") ){
           children.push(
             <PlayerScore id={player.id} name={player.name} score={player.score} />

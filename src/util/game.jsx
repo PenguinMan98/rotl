@@ -130,8 +130,7 @@ module.exports = {
     this.gameState.currentPlayerGuid = false;
 
     this.resetDice();
-    console.log('resetting game', this.gameState);
-    this.gameDB.update(this.gameState);
+    this.dbUpdate();
   },
 
 
@@ -158,6 +157,7 @@ module.exports = {
       console.log("Can't throw! Turn over.");
       return false;
     }
+    console.log('threw the dice');
     this.gameState.throwNumber += 1;
 
     var die;
@@ -324,7 +324,7 @@ module.exports = {
     if( !this.gameDB ){ return false; }
 
     delete this.gameState['.key'];  // not sure what this is or how it gets here but it screws everything up
-    console.log('updating', this.gameState);
+    delete this.gameState['.value'];  // not sure what this is or how it gets here but it screws everything up
     this.gameDB.update( this.gameState );
   }
 

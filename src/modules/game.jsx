@@ -46,10 +46,11 @@ module.exports = React.createClass({
       return false;
     }*/
 
-    var gameState = this.state.gameState;
-    this.props.gameUtil.setGameState(gameState);
-
-
+    var gameState = false;
+    if(this.state && this.state.gameState) {
+      gameState = this.state.gameState;
+      this.props.gameUtil.setGameState(gameState);
+    }
 
     if( myPlayer && myPlayer.showGame ){  // show: true
       if( gameState.winnerGuid ){
@@ -75,7 +76,9 @@ module.exports = React.createClass({
         </div>
 
       }else if( myPlayer && myPlayer.joinedGame ){ // I've joined the game
-        //console.log('show me the game!');
+        /*
+        * SHOW ME THE GAME (player)
+        * */
         return <div className="game-outer">
           <PlayerScoreList
             playerList={playerList}
@@ -90,7 +93,9 @@ module.exports = React.createClass({
           />
         </div>
       }else{ // I'm a spectator
-        //console.log('spectator mode');
+        /*
+         * SHOW ME THE GAME (spoectator)
+        * */
         return <div className="game-outer">
           <PlayerScoreList
             playerList={this.props.playerList}
@@ -107,6 +112,9 @@ module.exports = React.createClass({
       }
     }else{ // show: false
       if( myPlayer.joinedGame ){ // Then I've joined the game but I'm not ready; join: true
+        /*
+        * THE READY BUTTON
+        * */
         return <div className="game-outer">
           <div className="game-inner row">
             <input
@@ -119,6 +127,9 @@ module.exports = React.createClass({
         </div>
       }else{ // I haven't joined the game; join: false
         if(this.props.gameUtil.gameStarted){ // I can't join, game has already started.  join: false, show: false, started: true
+          /*
+          * GAME IN PROGRESS. YOU CAN SPECTATE ONLY.
+          * */
           return <div className="game-outer">
             <div className="game-inner row">
               <input
@@ -130,6 +141,9 @@ module.exports = React.createClass({
             </div>
           </div>
         }else{ // I'm free to join the game or spectate.  join: false, show: false, started: false
+          /*
+           * JOIN OR SPECTATE
+           * */
           return <div className="game-outer">
             <div className="game-inner row">
               <input
@@ -168,15 +182,13 @@ module.exports = React.createClass({
   /*
    * Handle player indicating they are ready to start the game
    * */
-  handleReady: function(){
-    if(this.state.gameState.gameStarted ){ // if the game has already started, this is not allowed
-      return false;
+  handleReady: function(e){
+    if(!this.state.gameState.gameStarted ) { // if the game has not started, this is not allowed
+      // make sure I'm working with the latest player list and game state
+      this.props.playerListUtil.setPlayerList(this.state.playerList);
+      // set me ready
+      this.props.playerListUtil.setReady(this.props.myGuid);
     }
-
-    // make sure I'm working with the latest player list and game state
-    this.props.playerListUtil.setPlayerList(this.state.playerList);
-    // set me ready
-    this.props.playerListUtil.setReady(this.props.myGuid);
   },
 
   /*
@@ -253,15 +265,19 @@ module.exports = React.createClass({
       // if the game is started, a vote to skip, restart, etc.
       // Or a player dropping out
 
-      var gameState = this.state.gameState;
+      /*var gameState = this.state.gameState;
       if(this.state && gameState && Object.keys(gameState).length > 1){ // I have a gameState and a playerList
         // check for win conditions
         this.checkWinConditions();
         // check for events that affect all players
-      }
+      }*/
     }else if( playerList === null ){
       myPlayer = {};
       myPlayer[this.props.myGuid] = this.props.myPlayer.props();
+      myPlayer[this.props.myGuid].joinedGame = false;
+      myPlayer[this.props.myGuid].myTurn = false;
+      myPlayer[this.props.myGuid].ready = false;
+      myPlayer[this.props.myGuid].showGame = false;
       this.props.playerListUtil.playerListDB.update(myPlayer);
     }
   },
@@ -277,11 +293,8 @@ module.exports = React.createClass({
 
     var playerList = this.state.playerList;
     if(this.state && playerList && Object.keys(playerList).length > 1){
-      this.checkWinConditions();
+      this.checkWinConditions( snapshot.val() );
     }
-  },
-  isItMyTurn: function( ){
-
   },
   countGamePlayers: function( playerList ){
     var gamePlayers = 0;
@@ -311,12 +324,10 @@ module.exports = React.createClass({
     }
     return gamePlayers;
   },
-  checkWinConditions: function(){
+  checkWinConditions: function( gameState ){
     if( this.state
-        && this.state.playerList && Object.keys(this.state.playerList).length > 1
-        && this.state.gameState && Object.keys(this.state.gameState).length > 1) {
+        && this.state.playerList && Object.keys(this.state.playerList).length > 1) {
 
-      var gameState = this.state.gameState;
       this.props.gameUtil.setGameState(gameState);
       var playerList = this.state.playerList;
       this.props.playerListUtil.setPlayerList(playerList);
@@ -324,11 +335,11 @@ module.exports = React.createClass({
       var myTurn = myPlayer.guid == gameState.currentPlayerGuid;
 
       // If the player's combined score totals over 500 and they have a green light, they win.
-      if( myTurn && myPlayer.score + gameState.turnScore >= 500 && !gameState.winnerGuid ){
-        if(gameState.flag.value === "green"){
+      if( myTurn && (parseInt(myPlayer.score) + parseInt(gameState.turnScore)) >= 500 && !gameState.winnerGuid ){
+        //if(gameState.flag.value === "green"){
           this.props.gameUtil.iWin(this.props.myGuid);
           this.props.playerListUtil.addScore(this.props.myGuid, gameState.turnScore);
-        }
+        //}
       }
     }
   }
